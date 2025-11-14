@@ -51,10 +51,21 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
-    implementation(libs.firebase.auth)
-    implementation(libs.androidx.credentials)
-    implementation(libs.androidx.credentials.play.services.auth)
-    implementation(libs.googleid)
+
+    implementation(platform("com.google.firebase:firebase-bom:33.4.0"))
+
+    // Firebase Auth
+    implementation("com.google.firebase:firebase-auth-ktx")
+
+    // Firestore
+    implementation("com.google.firebase:firebase-firestore-ktx")
+
+    // Google Sign-In (needed for One Tap + OAuth)
+    implementation("com.google.android.gms:play-services-auth:21.4.0")
+
+
+    implementation("androidx.navigation:navigation-compose:2.9.6")
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -62,4 +73,11 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+
+    implementation("androidx.compose.runtime:runtime-livedata:1.9.4")
+
+    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.9.4")
+
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.9.4")
+
 }
