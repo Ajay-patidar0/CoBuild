@@ -37,18 +37,21 @@ class MainActivity : ComponentActivity() {
                 ) {
 
                     // LOGIN SCREEN
+//                    composable("login") {
+//                        LoginScreen(
+//                            onLaunchGoogleSignIn = { intent: Intent ->
+//                                // Launch Google Sign-In intent here if needed
+//                                startActivity(intent)
+//
+//                                // After sign-in, navigate to onboarding (you can also do this after Firebase callback)
+//                                navController.navigate("onboarding") {
+//                                    popUpTo("login") { inclusive = true }
+//                                }
+//                            }
+//                        )
+//                    }
                     composable("login") {
-                        LoginScreen(
-                            onLaunchGoogleSignIn = { intent: Intent ->
-                                // Launch Google Sign-In intent here if needed
-                                startActivity(intent)
-
-                                // After sign-in, navigate to onboarding (you can also do this after Firebase callback)
-                                navController.navigate("onboarding") {
-                                    popUpTo("login") { inclusive = true }
-                                }
-                            }
-                        )
+                        LoginScreen(navController)
                     }
 
                     // ONBOARDING SCREEN
