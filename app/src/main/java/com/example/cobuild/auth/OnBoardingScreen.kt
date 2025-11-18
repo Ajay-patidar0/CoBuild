@@ -1,13 +1,14 @@
 package com.example.cobuild
 
 import android.widget.Toast
-import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -17,175 +18,106 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.tooling.preview.Preview
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import androidx.compose.foundation.layout.FlowRow
 
+@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun OnBoardingScreen() {
 
     val context = LocalContext.current
     val firestore = FirebaseFirestore.getInstance()
+    val currentUser = FirebaseAuth.getInstance().currentUser
 
-    // ------- FORM STATES -------
+    // User fields
     var name by remember { mutableStateOf("") }
     var role by remember { mutableStateOf("") }
     var skills by remember { mutableStateOf("") }
     var interests by remember { mutableStateOf("") }
-    var goals by remember { mutableStateOf("") }
+    var location by remember { mutableStateOf("") }
+    var companyOrCollege by remember { mutableStateOf("") }
+    var linkedin by remember { mutableStateOf("") }
+    var github by remember { mutableStateOf("") }
     var portfolio by remember { mutableStateOf("") }
 
     var isSaving by remember { mutableStateOf(false) }
 
-    // ------- SUGGESTIONS -------
-    val roleSuggestions = listOf("Designer", "Developer", "Product Manager", "Researcher", "Content Writer")
-    val skillSuggestions = listOf("UI/UX", "Figma", "Kotlin", "Java", "Jetpack Compose", "Firebase", "ML")
-    val interestSuggestions = listOf("App Design", "Prototyping", "AI", "Android Dev", "UI Animation")
+    val roles = listOf("Designer", "Developer", "Product Manager", "Researcher", "Data Analyst")
+    val skillsList = listOf("UI/UX", "Figma", "Kotlin", "Java", "Python", "ML", "Jetpack Compose", "Firebase")
+    val interestList = listOf("AI", "Android Dev", "Open Source", "UI Animation", "Product Design")
+    val indiaLocations = listOf("Mumbai", "Delhi", "Bangalore", "Hyderabad", "Chennai", "Pune", "Indore")
 
     val scrollState = rememberScrollState()
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF3F4F6))
+            .background(Color(0xFFF4F6FA))
             .verticalScroll(scrollState)
             .padding(20.dp)
     ) {
 
-        // ---------- HEADER ----------
-        Text(
-            text = "Complete Your Profile",
-            fontSize = 28.sp,
-            fontWeight = FontWeight.ExtraBold,
-            color = Color(0xFF3A0CA3)
-        )
+        Text("Complete Your Profile", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Color(0xFF3A86FF))
+        Spacer(Modifier.height(8.dp))
+        Text("Tell more about yourself to help others connect better", fontSize = 16.sp, color = Color.Gray)
+        Spacer(Modifier.height(20.dp))
 
-        Spacer(modifier = Modifier.height(6.dp))
-
-        Text(
-            text = "Tell the community about your role, skills and goals!",
-            fontSize = 16.sp,
-            color = Color.Gray
-        )
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        // ---------- CARD CONTAINER ----------
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(18.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(6.dp)
+            elevation = CardDefaults.cardElevation(4.dp)
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
+            Column(Modifier.padding(18.dp)) {
 
-                // NAME
-                CustomInputField("Your Name", name) { name = it }
-                Spacer(Modifier.height(12.dp))
-
-                // ROLE
-                Text("Select Role", fontWeight = FontWeight.SemiBold)
-                Spacer(Modifier.height(8.dp))
-
-                FlowRow(maxItemsInEachRow = 3) {
-                    roleSuggestions.forEach { suggestion ->
-                        SuggestionChip(
-                            text = suggestion,
-                            isSelected = role == suggestion,
-                            onClick = { role = suggestion }
-                        )
-                    }
-                }
-
-                Spacer(Modifier.height(10.dp))
-
-                CustomInputField(
-                    label = "Or type custom role",
-                    value = role,
-                    onChange = { role = it }
-                )
-
+                CustomInputField("Your Name", name, onChange = { name = it })
                 Spacer(Modifier.height(16.dp))
 
-                // SKILLS
-                Text("Skills", fontWeight = FontWeight.SemiBold)
-                Spacer(Modifier.height(8.dp))
-
-                FlowRow(maxItemsInEachRow = 3) {
-                    skillSuggestions.forEach { suggestion ->
-                        SuggestionChip(
-                            text = suggestion,
-                            isSelected = skills.contains(suggestion),
-                            onClick = {
-                                skills = if (skills.contains(suggestion)) {
-                                    skills.replace(suggestion, "")
-                                        .replace(",,", ",")
-                                        .trim(',')
-                                } else {
-                                    if (skills.isBlank()) suggestion else "$skills, $suggestion"
-                                }
-                            }
-                        )
-                    }
-                }
-
-                Spacer(Modifier.height(10.dp))
-
-                CustomInputField(
-                    label = "Add custom skills (comma separated)",
-                    value = skills,
-                    onChange = { skills = it }
-                )
-
+                CustomInputField("Your Role", role, onChange = { role = it })
+                AnimatedSuggestionList(query = role, items = roles) { selected -> role = selected }
                 Spacer(Modifier.height(16.dp))
 
-                // INTERESTS
-                Text("Interests", fontWeight = FontWeight.SemiBold)
-                Spacer(Modifier.height(8.dp))
-
-                FlowRow(maxItemsInEachRow = 3) {
-                    interestSuggestions.forEach { suggestion ->
-                        SuggestionChip(
-                            text = suggestion,
-                            isSelected = interests.contains(suggestion),
-                            onClick = {
-                                interests = if (interests.contains(suggestion)) {
-                                    interests.replace(suggestion, "")
-                                        .replace(",,", ",")
-                                        .trim(',')
-                                } else {
-                                    if (interests.isBlank()) suggestion else "$interests, $suggestion"
-                                }
-                            }
-                        )
-                    }
-                }
-
-                Spacer(Modifier.height(10.dp))
-
-                CustomInputField(
-                    label = "Add custom interests (comma separated)",
-                    value = interests,
-                    onChange = { interests = it }
-                )
-
+                CustomInputField("Skills (comma-separated)", skills, onChange = { skills = it })
+                AnimatedSuggestionList(
+                    query = getLastWord(skills),
+                    items = skillsList
+                ) { selected -> skills = replaceLastWord(skills, selected) }
                 Spacer(Modifier.height(16.dp))
 
-                // OTHER FIELDS
-                CustomInputField("Your Goals", goals) { goals = it }
-                Spacer(Modifier.height(12.dp))
-                CustomInputField("Portfolio Link", portfolio) { portfolio = it }
+                CustomInputField("Interests (comma-separated)", interests, onChange = { interests = it })
+                AnimatedSuggestionList(
+                    query = getLastWord(interests),
+                    items = interestList
+                ) { selected -> interests = replaceLastWord(interests, selected) }
+                Spacer(Modifier.height(16.dp))
 
+                CustomInputField("Location", location, onChange = { location = it })
+                AnimatedSuggestionList(query = location, items = indiaLocations) { selected -> location = selected }
+                Spacer(Modifier.height(16.dp))
+
+                CustomInputField("Company / College", companyOrCollege, onChange = { companyOrCollege = it })
+                Spacer(Modifier.height(16.dp))
+
+                CustomInputField("LinkedIn URL", linkedin, keyboardType = KeyboardType.Uri, onChange = { linkedin = it })
+                Spacer(Modifier.height(16.dp))
+
+                CustomInputField("GitHub URL", github, keyboardType = KeyboardType.Uri, onChange = { github = it })
+                Spacer(Modifier.height(16.dp))
+
+                CustomInputField("Portfolio Link (Optional)", portfolio, keyboardType = KeyboardType.Uri, onChange = { portfolio = it })
                 Spacer(Modifier.height(24.dp))
 
-                // ---------- SAVE BUTTON ----------
                 Button(
                     onClick = {
-
+                        if (currentUser == null) {
+                            Toast.makeText(context, "User not logged in!", Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
                         if (name.isBlank() || role.isBlank()) {
-                            Toast.makeText(context, "Name & Role are required!", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Name & Role required!", Toast.LENGTH_SHORT).show()
                             return@Button
                         }
 
@@ -194,19 +126,19 @@ fun OnBoardingScreen() {
                         val userMap = hashMapOf(
                             "name" to name,
                             "role" to role,
-                            "skills" to skills.split(",").map { it.trim() }
-                                .filter { it.isNotEmpty() },
-                            "interests" to interests.split(",").map { it.trim() }
-                                .filter { it.isNotEmpty() },
-                            "goals" to goals,
-                            "portfolio" to portfolio.split(",").map { it.trim() }
-                                .filter { it.isNotEmpty() },
+                            "skills" to splitCsv(skills),
+                            "interests" to splitCsv(interests),
+                            "location" to location,
+                            "companyOrCollege" to companyOrCollege,
+                            "linkedin" to linkedin,
+                            "github" to github,
+                            "portfolio" to portfolio,
                             "createdAt" to com.google.firebase.Timestamp.now()
                         )
 
-                        // No login → random document for demonstration
                         firestore.collection("users")
-                            .add(userMap)
+                            .document(currentUser.uid)
+                            .set(userMap)
                             .addOnSuccessListener {
                                 isSaving = false
                                 Toast.makeText(context, "Profile Saved!", Toast.LENGTH_SHORT).show()
@@ -235,53 +167,85 @@ fun OnBoardingScreen() {
                 }
             }
         }
-
-        Spacer(modifier = Modifier.height(40.dp))
     }
 }
 
 @Composable
-fun SuggestionChip(text: String, isSelected: Boolean, onClick: () -> Unit) {
-
-    val bgColor by animateColorAsState(
-        targetValue = if (isSelected) Color(0xFF3A86FF) else Color(0xFFE8EAF0),
-        label = ""
-    )
-
-    val textColor by animateColorAsState(
-        targetValue = if (isSelected) Color.White else Color.Black,
-        label = ""
-    )
-
-    Box(
-        modifier = Modifier
-            .padding(4.dp)
-            .clip(RoundedCornerShape(50))
-            .background(bgColor)
-            .clickable { onClick() }
-            .padding(horizontal = 16.dp, vertical = 10.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(text, color = textColor, fontSize = 14.sp)
-    }
-}
-
-@Composable
-fun CustomInputField(label: String, value: String, onChange: (String) -> Unit) {
+fun CustomInputField(
+    label: String,
+    value: String,
+    onChange: (String) -> Unit,
+    keyboardType: KeyboardType = KeyboardType.Text
+) {
     Column {
         Text(label, fontWeight = FontWeight.Medium, fontSize = 14.sp)
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(Modifier.height(4.dp))
+
         OutlinedTextField(
             value = value,
             onValueChange = onChange,
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(10.dp)
+            shape = RoundedCornerShape(10.dp),
+            keyboardOptions = KeyboardOptions.Default.copy(keyboardType = keyboardType),
+            singleLine = true
         )
     }
 }
 
-@Preview(showBackground = true)
+@OptIn(ExperimentalAnimationApi::class)
 @Composable
-fun OnboardingPreview() {
-    OnBoardingScreen()
+fun AnimatedSuggestionList(
+    query: String,
+    items: List<String>,
+    onClick: (String) -> Unit
+) {
+
+    val filtered = remember(query) {
+        if (query.isBlank()) emptyList()
+        else items.filter { it.contains(query, ignoreCase = true) }.take(5)
+    }
+
+    AnimatedVisibility(
+        visible = filtered.isNotEmpty(),
+        enter = fadeIn(tween(180)) + slideInVertically(),
+        exit = fadeOut(tween(180)) + slideOutVertically()
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(top = 6.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(Color(0xFFF1F1F1))
+        ) {
+            filtered.forEach { suggestion ->
+                SuggestionRow(text = suggestion) { onClick(suggestion) }
+            }
+        }
+    }
 }
+
+@Composable
+fun SuggestionRow(text: String, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(text, fontSize = 15.sp, color = Color.DarkGray)
+    }
+}
+
+// -------- Helper Functions ----------
+fun replaceLastWord(current: String, new: String): String {
+    val parts = current.split(",").map { it.trim() }.toMutableList()
+    if (parts.isEmpty()) return new
+    parts[parts.size - 1] = new
+    return parts.joinToString(", ")
+}
+
+fun getLastWord(text: String): String =
+    if (text.isBlank()) "" else text.split(",").last().trim()
+
+fun splitCsv(text: String): List<String> =
+    text.split(",").map { it.trim() }.filter { it.isNotEmpty() }
