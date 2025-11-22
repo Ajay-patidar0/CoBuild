@@ -21,12 +21,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
-fun OnBoardingScreen() {
+fun OnBoardingScreen(navController: NavController? = null) {
 
     val context = LocalContext.current
     val firestore = FirebaseFirestore.getInstance()
@@ -133,7 +135,7 @@ fun OnBoardingScreen() {
                             "linkedin" to linkedin,
                             "github" to github,
                             "portfolio" to portfolio,
-                            "createdAt" to com.google.firebase.Timestamp.now()
+                            "createdAt" to Timestamp.now()
                         )
 
                         firestore.collection("users")
@@ -142,6 +144,11 @@ fun OnBoardingScreen() {
                             .addOnSuccessListener {
                                 isSaving = false
                                 Toast.makeText(context, "Profile Saved!", Toast.LENGTH_SHORT).show()
+
+                                // MOVE TO HOME SCREEN
+                                navController?.navigate("home") {
+                                    popUpTo("onboarding") { inclusive = true }
+                                }
                             }
                             .addOnFailureListener {
                                 isSaving = false
@@ -174,8 +181,8 @@ fun OnBoardingScreen() {
 fun CustomInputField(
     label: String,
     value: String,
-    onChange: (String) -> Unit,
-    keyboardType: KeyboardType = KeyboardType.Text
+    keyboardType: KeyboardType = KeyboardType.Text,
+    onChange: (String) -> Unit
 ) {
     Column {
         Text(label, fontWeight = FontWeight.Medium, fontSize = 14.sp)
