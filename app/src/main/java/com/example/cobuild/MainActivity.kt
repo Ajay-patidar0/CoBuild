@@ -21,6 +21,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             CoBuildTheme {
+
                 val navController = rememberNavController()
 
                 val auth = FirebaseAuth.getInstance()
@@ -29,13 +30,10 @@ class MainActivity : ComponentActivity() {
 
                 var startDestination by remember { mutableStateOf("login") }
 
-                // 🔥 CHECK USER STATUS AS SOON AS APP LAUNCHES
                 LaunchedEffect(Unit) {
                     if (currentUser == null) {
-                        // Not logged in → go to login
                         startDestination = "login"
                     } else {
-                        // Logged in → check Firestore profile
                         firestore.collection("users")
                             .document(currentUser.uid)
                             .get()
@@ -44,29 +42,24 @@ class MainActivity : ComponentActivity() {
                                     if (doc.exists()) "home" else "onboarding"
                             }
                             .addOnFailureListener {
-                                // If any error → force onboarding
                                 startDestination = "onboarding"
                             }
                     }
                 }
 
-                // 🔥 NAVIGATION
                 NavHost(
                     navController = navController,
                     startDestination = startDestination
                 ) {
 
-                    // LOGIN SCREEN
                     composable("login") {
                         LoginScreen(navController)
                     }
 
-                    // ONBOARDING SCREEN
                     composable("onboarding") {
-                        OnBoardingScreen()
+                        OnBoardingScreen(navController)
                     }
 
-                    // HOME SCREEN → simple placeholder for now
                     composable("home") {
                         HomeScreen()
                     }
@@ -75,4 +68,3 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-
