@@ -1,0 +1,10 @@
+<!-- res/drawable/profile_placeholder.xml -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="120"
+    android:viewportHeight="120">
+    <path
+        android:fillColor="@android:color/darker_gray"
+        android:pathData="M60,60m-40,0a40,40 0,1 1,80 0a40,40 0,1 1,-80 0" />
+</vector>
