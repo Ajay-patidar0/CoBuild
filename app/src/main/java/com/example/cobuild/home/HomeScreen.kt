@@ -47,7 +47,6 @@ fun HomeScreen(
     Scaffold(
         containerColor = BackgroundColor,
         topBar = {
-            // Added a proper small header
             HomeTopBar()
         },
         bottomBar = {
@@ -359,9 +358,6 @@ fun CategoryCard(name: String, count: String, color: Color, modifier: Modifier =
     }
 }
 
-/*-----------------------------------------
-   BOTTOM NAVIGATION
------------------------------------------*/
 @Composable
 fun BottomNavigationBar(
     selectedTab: Int,
@@ -450,5 +446,5 @@ fun BottomNavigationBar(
 fun navColors() = NavigationBarItemDefaults.colors(
     selectedIconColor = PrimaryColor,
     unselectedIconColor = Color(0xFF94A3B8),
-    indicatorColor = Color.Transparent // Removes the pill background for a cleaner look
+    indicatorColor = Color.Transparent
 )
