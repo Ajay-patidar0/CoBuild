@@ -25,38 +25,51 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.example.cobuild.R
+import com.example.cobuild.data.model.Project
+import com.example.cobuild.ui.project.ProjectViewModel
 
-// --- Theme Colors ---
-private val PrimaryColor = Color(0xFF4F46E5) // Indigo 600
-private val BackgroundColor = Color(0xFFF8FAFC) // Slate 50
+/* -------------------- COLORS -------------------- */
+
+private val PrimaryColor = Color(0xFF4F46E5)
+private val BackgroundColor = Color(0xFFF8FAFC)
 private val SurfaceColor = Color.White
-private val TextPrimary = Color(0xFF1E293B) // Slate 800
-private val TextSecondary = Color(0xFF64748B) // Slate 500
+private val TextPrimary = Color(0xFF1E293B)
+private val TextSecondary = Color(0xFF64748B)
+private val BorderLight = Color(0xFFE2E8F0)
+
+/* -------------------- HOME SCREEN -------------------- */
 
 @Composable
 fun HomeScreen(
-    onProjectsClick: () -> Unit = {},
+    navController: NavController,
     onAddProjectClick: () -> Unit = {},
     onMessagesClick: () -> Unit = {},
-    onProfileClick: () -> Unit = {}
+    onProfileClick: () -> Unit = {},
+    onProjectClick: (Project) -> Unit = {}  // <-- Added this
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
     val scrollState = rememberScrollState()
 
+    val projectViewModel: ProjectViewModel = viewModel()
+    val projects by projectViewModel.projects.collectAsState()
+
+    LaunchedEffect(Unit) {
+        projectViewModel.loadProjects()
+    }
+
     Scaffold(
         containerColor = BackgroundColor,
-        topBar = {
-            HomeTopBar()
-        },
+        topBar = { HomeTopBar() },
         bottomBar = {
             BottomNavigationBar(
                 selectedTab = selectedTab,
                 onTabSelected = { tab ->
                     selectedTab = tab
                     when (tab) {
-                        0 -> {} // Home
-                        1 -> onProjectsClick()
+                        1 -> {} // Projects tab action if needed
                         2 -> onAddProjectClick()
                         3 -> onMessagesClick()
                         4 -> onProfileClick()
@@ -64,107 +77,76 @@ fun HomeScreen(
                 }
             )
         }
-    ) { paddingValues ->
+    ) { padding ->
+
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
+                .padding(padding)
                 .verticalScroll(scrollState)
-                .padding(horizontal = 20.dp, vertical = 10.dp)
+                .padding(20.dp)
         ) {
 
-            // Search Bar Visual
             SearchBarVisual()
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(Modifier.height(20.dp))
 
-            // Hero Text
             Text(
-                text = "Let's Build Something\nAmazing Together.",
-                fontSize = 26.sp,
+                text = "Build Together.\nGrow Faster.",
+                fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
                 color = TextPrimary,
                 lineHeight = 34.sp
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(Modifier.height(6.dp))
 
             Text(
-                text = "Find partners for your next big idea.",
+                text = "Discover ideas and find collaborators",
                 fontSize = 15.sp,
                 color = TextSecondary
             )
 
-            Spacer(modifier = Modifier.height(28.dp))
+            Spacer(Modifier.height(20.dp))
 
-            // --- Featured Projects ---
-            SectionHeader(title = "Featured Projects", actionText = "See All")
+            AddProjectCTA(onAddProjectClick)
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(Modifier.height(28.dp))
 
-            FeaturedProjectCard(
-                title = "AI Note Scanner",
-                category = "Machine Learning",
-                description = "Smart OCR scanner with auto-tagging.",
-                accentColor = Color(0xFF3B82F6) // Blue
+            Text(
+                text = "Latest Projects",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = TextPrimary
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(Modifier.height(14.dp))
 
-            FeaturedProjectCard(
-                title = "Habit Tracker UI",
-                category = "Design System",
-                description = "Minimal UI/UX kit for productivity apps.",
-                accentColor = Color(0xFF8B5CF6) // Purple
-            )
-
-            Spacer(modifier = Modifier.height(28.dp))
-
-            // --- Categories/Collaborators ---
-            SectionHeader(title = "Browse Categories")
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            // Grid Layout for Categories
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    CategoryCard(
-                        name = "Design",
-                        count = "120+ Projects",
-                        color = Color(0xFFEC4899), // Pink
-                        modifier = Modifier.weight(1f)
-                    )
-                    CategoryCard(
-                        name = "Code",
-                        count = "340+ Projects",
-                        color = Color(0xFF10B981), // Emerald
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    CategoryCard(
-                        name = "AI & ML",
-                        count = "85+ Projects",
-                        color = Color(0xFFF59E0B), // Amber
-                        modifier = Modifier.weight(1f)
-                    )
-                    CategoryCard(
-                        name = "Mobile",
-                        count = "200+ Projects",
-                        color = Color(0xFF6366F1), // Indigo
-                        modifier = Modifier.weight(1f)
-                    )
+            if (projects.isEmpty()) {
+                Text(
+                    text = "No projects yet. Be the first to post!",
+                    color = TextSecondary
+                )
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    projects.forEach { project ->
+                        CompactProjectCard(
+                            project = project,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    onProjectClick(project) // <-- Pass project when clicked
+                                }
+                        )
+                    }
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(Modifier.height(40.dp))
         }
     }
 }
 
-/*-----------------------------------------
-   COMPONENTS
------------------------------------------*/
+/* -------------------- TOP BAR -------------------- */
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -173,13 +155,13 @@ fun HomeTopBar() {
         title = {
             Column {
                 Text(
-                    text = "Welcome back,",
-                    style = MaterialTheme.typography.bodySmall,
+                    text = "Welcome back 👋",
+                    fontSize = 13.sp,
                     color = TextSecondary
                 )
                 Text(
-                    text = "CoBuilder 👋",
-                    style = MaterialTheme.typography.titleMedium,
+                    text = "CoBuilder",
+                    fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary
                 )
@@ -187,176 +169,88 @@ fun HomeTopBar() {
         },
         actions = {
             IconButton(
-                onClick = { /* TODO */ },
+                onClick = {},
                 modifier = Modifier
                     .clip(CircleShape)
-                    .background(Color.White)
-                    .border(1.dp, Color(0xFFE2E8F0), CircleShape)
-                    .size(40.dp)
+                    .background(SurfaceColor)
+                    .border(1.dp, BorderLight, CircleShape)
+                    .size(42.dp)
             ) {
                 Icon(
                     imageVector = Icons.Outlined.Notifications,
-                    contentDescription = "Notifications",
-                    tint = TextPrimary,
-                    modifier = Modifier.size(20.dp)
+                    contentDescription = null,
+                    tint = TextPrimary
                 )
             }
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(Modifier.width(12.dp))
         },
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = BackgroundColor
-        )
+        colors = TopAppBarDefaults.topAppBarColors(containerColor = BackgroundColor)
     )
 }
+
+/* -------------------- SEARCH -------------------- */
 
 @Composable
 fun SearchBarVisual() {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(50.dp)
-            .clip(RoundedCornerShape(14.dp))
+            .height(52.dp)
+            .clip(RoundedCornerShape(16.dp))
             .background(SurfaceColor)
-            .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(14.dp))
+            .border(1.dp, BorderLight, RoundedCornerShape(16.dp))
             .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(
-            imageVector = Icons.Default.Search,
-            contentDescription = "Search",
-            tint = TextSecondary
-        )
-        Spacer(modifier = Modifier.width(12.dp))
+        Icon(Icons.Default.Search, null, tint = TextSecondary)
+        Spacer(Modifier.width(12.dp))
         Text(
-            text = "Search for projects or people...",
-            color = Color(0xFF94A3B8),
-            fontSize = 14.sp
+            text = "Search projects, skills or people",
+            fontSize = 14.sp,
+            color = Color(0xFF94A3B8)
         )
     }
 }
 
-@Composable
-fun SectionHeader(title: String, actionText: String? = null) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = title,
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Bold,
-            color = TextPrimary
-        )
-        if (actionText != null) {
-            Text(
-                text = actionText,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = PrimaryColor,
-                modifier = Modifier.clickable { }
-            )
-        }
-    }
-}
+/* -------------------- CTA -------------------- */
 
 @Composable
-fun FeaturedProjectCard(title: String, category: String, description: String, accentColor: Color) {
+fun AddProjectCTA(onAddProjectClick: () -> Unit) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = SurfaceColor),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = PrimaryColor),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onAddProjectClick() }
     ) {
         Row(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
+            modifier = Modifier.padding(18.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Icon Box
-            Box(
-                modifier = Modifier
-                    .size(56.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(accentColor.copy(alpha = 0.1f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(14.dp)
-                        .background(accentColor, CircleShape)
-                )
-            }
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                // Category Tag
-                Surface(
-                    color = accentColor.copy(alpha = 0.08f),
-                    shape = RoundedCornerShape(6.dp)
-                ) {
-                    Text(
-                        text = category.uppercase(),
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = accentColor,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(6.dp))
-
+            Column(Modifier.weight(1f)) {
                 Text(
-                    text = title,
+                    text = "Have an idea?",
+                    fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
-                    color = TextPrimary
+                    color = Color.White
                 )
                 Text(
-                    text = description,
-                    fontSize = 13.sp,
-                    color = TextSecondary,
-                    maxLines = 1
+                    text = "Post a project & find collaborators",
+                    fontSize = 14.sp,
+                    color = Color.White.copy(alpha = 0.9f)
                 )
             }
+            Icon(
+                Icons.Default.Add,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(26.dp)
+            )
         }
     }
 }
 
-@Composable
-fun CategoryCard(name: String, count: String, color: Color, modifier: Modifier = Modifier) {
-    Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = SurfaceColor),
-        border = BorderStroke(1.dp, Color(0xFFF1F5F9))
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.Center
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(8.dp)
-                    .background(color, CircleShape)
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = name,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 15.sp,
-                color = TextPrimary
-            )
-            Text(
-                text = count,
-                fontSize = 12.sp,
-                color = TextSecondary
-            )
-        }
-    }
-}
+/* -------------------- BOTTOM NAV -------------------- */
 
 @Composable
 fun BottomNavigationBar(
@@ -365,36 +259,31 @@ fun BottomNavigationBar(
 ) {
     NavigationBar(
         containerColor = SurfaceColor,
-        tonalElevation = 0.dp,
-        modifier = Modifier.border(
-            width = 1.dp,
-            color = Color(0xFFF1F5F9),
-            shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
-        ).clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
+        modifier = Modifier
+            .border(1.dp, BorderLight, RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
+            .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
     ) {
-        // Home
+
         NavigationBarItem(
             selected = selectedTab == 0,
             onClick = { onTabSelected(0) },
-            icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
+            icon = { Icon(Icons.Default.Home, null, Modifier.size(24.dp)) },
             colors = navColors()
         )
 
-        // Projects
         NavigationBarItem(
             selected = selectedTab == 1,
             onClick = { onTabSelected(1) },
             icon = {
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_projects),
-                    contentDescription = "Projects",
+                    painter = painterResource(R.drawable.ic_projects),
+                    contentDescription = null,
                     modifier = Modifier.size(24.dp)
                 )
             },
             colors = navColors()
         )
 
-        // Add Button
         NavigationBarItem(
             selected = false,
             onClick = { onTabSelected(2) },
@@ -402,41 +291,34 @@ fun BottomNavigationBar(
                 Surface(
                     shape = CircleShape,
                     color = PrimaryColor,
-                    shadowElevation = 6.dp,
-                    modifier = Modifier.size(52.dp)
+                    modifier = Modifier.size(50.dp),
+                    shadowElevation = 6.dp
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            Icons.Default.Add,
-                            contentDescription = "Create",
-                            tint = Color.White,
-                            modifier = Modifier.size(30.dp)
-                        )
+                        Icon(Icons.Default.Add, null, tint = Color.White)
                     }
                 }
             },
             colors = NavigationBarItemDefaults.colors(indicatorColor = Color.Transparent)
         )
 
-        // Chats
         NavigationBarItem(
             selected = selectedTab == 3,
             onClick = { onTabSelected(3) },
             icon = {
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_chat),
-                    contentDescription = "Chats",
+                    painter = painterResource(R.drawable.ic_chat),
+                    contentDescription = null,
                     modifier = Modifier.size(24.dp)
                 )
             },
             colors = navColors()
         )
 
-        // Profile
         NavigationBarItem(
             selected = selectedTab == 4,
             onClick = { onTabSelected(4) },
-            icon = { Icon(Icons.Default.Person, contentDescription = "Profile") },
+            icon = { Icon(Icons.Default.Person, null, Modifier.size(24.dp)) },
             colors = navColors()
         )
     }
@@ -448,3 +330,29 @@ fun navColors() = NavigationBarItemDefaults.colors(
     unselectedIconColor = Color(0xFF94A3B8),
     indicatorColor = Color.Transparent
 )
+
+/* -------------------- COMPACT PROJECT CARD -------------------- */
+
+@Composable
+fun CompactProjectCard(
+    project: Project,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = SurfaceColor),
+        modifier = modifier
+            .height(100.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(project.title, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Spacer(Modifier.height(4.dp))
+                Text("by ${project.ownerName}", color = TextSecondary, fontSize = 12.sp)
+            }
+        }
+    }
+}
