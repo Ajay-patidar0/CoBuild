@@ -3,12 +3,16 @@ package com.example.cobuild.ui.project
 import androidx.lifecycle.ViewModel
 import com.example.cobuild.data.model.Project
 import com.example.cobuild.data.repository.ProjectRepository
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 class ProjectViewModel : ViewModel() {
 
     private val repository = ProjectRepository()
+    private val auth = FirebaseAuth.getInstance()
+    private val firestore = FirebaseFirestore.getInstance()
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
@@ -24,19 +28,61 @@ class ProjectViewModel : ViewModel() {
         description: String,
         goal: String,
         skills: String,
+
+        timeline: String,
+        teamSize: String,
+        projectType: String,
+        commitmentLevel: String,
+        experienceLevel: String,
+
         link: String
     ) {
+        val user = auth.currentUser ?: return
         _isLoading.value = true
-        repository.addProject(
-            title,
-            description,
-            goal,
-            skills,
-            link
-        ) { success ->
-            _isLoading.value = false
-            _isSuccess.value = success
-        }
+
+        // Fetch profile name from Firestore
+        firestore.collection("users")
+            .document(user.uid)
+            .get()
+            .addOnSuccessListener { doc ->
+
+                val profileName =
+                    doc.getString("name")
+                        ?: doc.getString("username")
+                        ?: "Anonymous"
+
+                val skillsList = skills
+                    .split(",")
+                    .map { it.trim() }
+                    .filter { it.isNotEmpty() }
+
+                repository.addProject(
+                    ownerId = user.uid,
+                    ownerName = profileName,
+
+                    title = title.trim(),
+                    description = description.trim(),
+                    goal = goal.trim(),
+
+                    skills = skillsList,
+
+                    timeline = timeline.trim(),
+                    teamSize = teamSize.trim(),
+                    projectType = projectType.trim(),
+                    commitmentLevel = commitmentLevel.trim(),
+                    experienceLevel = experienceLevel.trim(),
+
+                    link = link.takeIf { it.isNotBlank() }
+
+                ) { success ->
+                    _isLoading.value = false
+                    _isSuccess.value = success
+                }
+            }
+            .addOnFailureListener {
+                _isLoading.value = false
+                _isSuccess.value = false
+            }
     }
 
     fun loadProjects() {
