@@ -35,7 +35,7 @@ fun CompactProjectCard(
         ) {
 
             Text(
-                text = project.title,
+                text = project.title.ifBlank { "Untitled Project" },
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 color = TextPrimary,
@@ -46,7 +46,7 @@ fun CompactProjectCard(
             Spacer(modifier = Modifier.height(4.dp))
 
             Text(
-                text = "by ${project.ownerName}",
+                text = "by ${project.ownerName.ifBlank { "Unknown" }}",
                 fontSize = 13.sp,
                 color = TextSecondary
             )
@@ -54,35 +54,40 @@ fun CompactProjectCard(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = project.description,
+                text = project.description
+                    ?.takeIf { it.isNotBlank() }
+                    ?: "No description provided",
                 fontSize = 14.sp,
                 color = TextSecondary,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
 
+
             Spacer(modifier = Modifier.height(12.dp))
 
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                project.skills
-                    .take(3)
-                    .forEach { skill: String ->
-                        AssistChip(
-                            onClick = {},
-                            label = {
-                                Text(
-                                    text = skill,
-                                    fontSize = 12.sp
+            if (project.skills.isNotEmpty()) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    project.skills
+                        .take(3)
+                        .forEach { skill ->
+                            AssistChip(
+                                onClick = {},
+                                label = {
+                                    Text(
+                                        text = skill,
+                                        fontSize = 12.sp
+                                    )
+                                },
+                                colors = AssistChipDefaults.assistChipColors(
+                                    containerColor = PrimaryColor.copy(alpha = 0.12f),
+                                    labelColor = PrimaryColor
                                 )
-                            },
-                            colors = AssistChipDefaults.assistChipColors(
-                                containerColor = PrimaryColor.copy(alpha = 0.12f),
-                                labelColor = PrimaryColor
                             )
-                        )
-                    }
+                        }
+                }
             }
         }
     }
