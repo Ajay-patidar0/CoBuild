@@ -19,7 +19,17 @@ data class Project(
 
     val link: String? = null,
 
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+
+    // ADD this field at the bottom of your Project data class
+    val status: ProjectStatus = ProjectStatus.YET_TO_START
+
 )
+
+enum class ProjectStatus {
+    YET_TO_START,
+    IN_PROGRESS,
+    COMPLETED
+}
 
 
