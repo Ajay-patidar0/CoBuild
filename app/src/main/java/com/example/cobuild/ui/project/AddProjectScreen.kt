@@ -27,7 +27,6 @@ import kotlinx.coroutines.launch
 private val PrimaryColor = Color(0xFF4F46E5)
 private val BackgroundColor = Color(0xFFF8FAFC)
 private val SurfaceColor = Color.White
-private val TextPrimary = Color(0xFF1E293B)
 private val TextSecondary = Color(0xFF64748B)
 private val ErrorColor = Color(0xFFEF4444)
 
@@ -77,7 +76,7 @@ fun AddProjectScreen(
                 title = { Text("New Project", fontWeight = FontWeight.SemiBold) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, null)
+                        Icon(Icons.Default.ArrowBack, contentDescription = null)
                     }
                 }
             )
@@ -92,7 +91,7 @@ fun AddProjectScreen(
         ) {
 
             Text(
-                "Share Your Idea",
+                text = "Share Your Idea",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold
             )
@@ -169,7 +168,7 @@ fun AddProjectScreen(
                 onValueChange = { timeline = it },
                 label = { Text("Expected Timeline") },
                 placeholder = { Text("1–3 months") },
-                leadingIcon = { Icon(Icons.Default.Timer, null) }, // <- fixed
+                leadingIcon = { Icon(Icons.Default.Timer, null) },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 colors = formFieldColors()
@@ -182,7 +181,7 @@ fun AddProjectScreen(
                 onValueChange = { teamSize = it },
                 label = { Text("Team Size Needed") },
                 placeholder = { Text("2–4 people") },
-                leadingIcon = { Icon(Icons.Default.Groups, null) }, // <- fixed
+                leadingIcon = { Icon(Icons.Default.Groups, null) },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 colors = formFieldColors()
@@ -287,7 +286,11 @@ fun AddProjectScreen(
                         strokeWidth = 2.dp
                     )
                 } else {
-                    Text("Post Project", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text(
+                        text = "Post Project",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
         }
