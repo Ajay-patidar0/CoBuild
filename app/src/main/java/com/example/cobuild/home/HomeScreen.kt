@@ -30,6 +30,7 @@ import androidx.navigation.NavController
 import com.example.cobuild.R
 import com.example.cobuild.data.model.Project
 import com.example.cobuild.ui.project.ProjectViewModel
+import com.example.cobuild.navigation.Destinations
 
 /* -------------------- COLORS -------------------- */
 
@@ -48,7 +49,7 @@ fun HomeScreen(
     onAddProjectClick: () -> Unit = {},
     onMessagesClick: () -> Unit = {},
     onProfileClick: () -> Unit = {},
-    onProjectClick: (Project) -> Unit = {}  // <-- Added this
+    onProjectClick: (Project) -> Unit = {}
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
     val scrollState = rememberScrollState()
@@ -69,7 +70,10 @@ fun HomeScreen(
                 onTabSelected = { tab ->
                     selectedTab = tab
                     when (tab) {
-                        1 -> {} // Projects tab action if needed
+                        1 -> {
+                            // Navigate to ProjectListScreen when Projects tab is selected
+                            navController.navigate(Destinations.PROJECT_LIST)
+                        }
                         2 -> onAddProjectClick()
                         3 -> onMessagesClick()
                         4 -> onProfileClick()
@@ -134,7 +138,7 @@ fun HomeScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    onProjectClick(project) // <-- Pass project when clicked
+                                    onProjectClick(project)
                                 }
                         )
                     }
