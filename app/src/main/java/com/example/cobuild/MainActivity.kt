@@ -5,12 +5,19 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.*
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.cobuild.auth.LoginScreen
+import com.example.cobuild.data.model.Project
 import com.example.cobuild.home.HomeScreen
+import com.example.cobuild.navigation.Destinations
 import com.example.cobuild.profile.ProfileScreen
+import com.example.cobuild.ui.project.AddProjectScreen
+import com.example.cobuild.ui.project.ProjectDetailScreen
+import com.example.cobuild.ui.project.ProjectListScreen
 import com.example.cobuild.ui.theme.CoBuildTheme
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -35,21 +42,21 @@ fun MainApp() {
     val firestore = FirebaseFirestore.getInstance()
     val currentUser = auth.currentUser
 
-    var startDestination by remember { mutableStateOf("login") }
+    var startDestination by remember { mutableStateOf(Destinations.LOGIN) }
 
     LaunchedEffect(Unit) {
         if (currentUser == null) {
-            startDestination = "login"
+            startDestination = Destinations.LOGIN
         } else {
             firestore.collection("users")
                 .document(currentUser.uid)
                 .get()
                 .addOnSuccessListener { doc ->
                     startDestination =
-                        if (doc.exists()) "home" else "onboarding"
+                        if (doc.exists()) Destinations.HOME else Destinations.ONBOARDING
                 }
                 .addOnFailureListener {
-                    startDestination = "onboarding"
+                    startDestination = Destinations.ONBOARDING
                 }
         }
     }
@@ -58,33 +65,87 @@ fun MainApp() {
         navController = navController,
         startDestination = startDestination
     ) {
-        composable("login") {
+
+        composable(Destinations.LOGIN) {
             LoginScreen(navController)
         }
 
-        composable("onboarding") {
-            // Make sure you have OnBoardingScreen in your project with navController parameter
-            // If not, you can create it or remove this composable
+        composable(Destinations.ONBOARDING) {
             OnBoardingScreen(navController)
         }
 
-        composable("home") {
+        composable(Destinations.HOME) {
             HomeScreen(
-                onProfileClick = { navController.navigate("profile") },
-                onProjectsClick = { /* Handle projects click */ },
-                onAddProjectClick = { /* Handle add project click */ },
-                onMessagesClick = { /* Handle messages click */ }
+                navController = navController,
+                onAddProjectClick = {
+                    navController.navigate(Destinations.ADD_PROJECT)
+                },
+                onMessagesClick = {},
+                onProfileClick = {
+                    navController.navigate(Destinations.PROFILE)
+                },
+                onProjectClick = { project ->
+                    navController.navigate(
+                        "${Destinations.PROJECT_DETAIL}/${project.id}"
+                    )
+                }
             )
         }
 
-        composable("profile") {
+        composable(Destinations.ADD_PROJECT) {
+            AddProjectScreen(
+                onProjectPosted = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(Destinations.PROFILE) {
             ProfileScreen(
-                onHomeClick = { navController.navigate("home") },
-                onProjectsClick = { /* Handle projects click */ },
-                onAddProjectClick = { /* Handle add project click */ },
-                onMessagesClick = { /* Handle messages click */ },
-                onProfileClick = { /* Already on profile */ }
+                onHomeClick = {
+                    navController.navigate(Destinations.HOME) {
+                        popUpTo(Destinations.HOME) { inclusive = true }
+                    }
+                },
+                onProjectsClick = {
+                    // ✅ NAVIGATE TO PROJECT LIST
+                    navController.navigate(Destinations.PROJECT_LIST)
+                },
+                onAddProjectClick = {
+                    navController.navigate(Destinations.ADD_PROJECT)
+                },
+                onMessagesClick = {},
+                onProfileClick = {}
+            )
+        }
+
+        // ✅ PROJECT LIST SCREEN
+        composable(Destinations.PROJECT_LIST) {
+            ProjectListScreen(
+                onBackClick = { navController.popBackStack() },
+                onProjectClick = { projectId ->
+                    navController.navigate(
+                        "${Destinations.PROJECT_DETAIL}/${projectId}"
+                    )
+                }
+            )
+        }
+
+        // ✅ PROJECT DETAIL (ID BASED)
+        composable(
+            route = Destinations.PROJECT_DETAIL_ROUTE,
+            arguments = listOf(
+                navArgument("projectId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val projectId =
+                backStackEntry.arguments?.getString("projectId") ?: return@composable
+
+            ProjectDetailScreen(
+                projectId = projectId,
+                onBackClick = { navController.popBackStack() }
             )
         }
     }
+
 }
