@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cobuild.data.model.Project
+import com.google.firebase.auth.FirebaseAuth
 
 private val PrimaryColor = Color(0xFF4F46E5)
 private val TextPrimary = Color(0xFF1E293B)
@@ -31,7 +32,11 @@ fun ProjectDetailScreen(
     val viewModel: ProjectRequestViewModel = viewModel()
     val isRequested by viewModel.isRequested.collectAsState(initial = false)
 
-    // Collect project from Flow<Project?>
+    // ✅ Get current user safely
+    val currentUserId = remember {
+        FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
+    }
+
     val project by viewModel
         .getProjectById(projectId)
         .collectAsState(initial = null)
@@ -64,20 +69,34 @@ fun ProjectDetailScreen(
 
         val proj = project!!
 
+        /**
+         * ✅ FINAL OWNER CHECK (FAILSAFE)
+         * Hide button IF:
+         * - user is owner
+         * - OR ownerId missing (old data)
+         * - OR user not logged in
+         */
+        val isOwner = remember(proj.ownerId, currentUserId) {
+            proj.ownerId.isNullOrBlank() ||
+                    currentUserId.isBlank() ||
+                    proj.ownerId == currentUserId
+        }
+
         Column(
             modifier = Modifier
                 .padding(padding)
                 .padding(20.dp)
                 .fillMaxSize()
         ) {
-            // Title & Owner
             Text(
                 text = proj.title,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
                 color = TextPrimary
             )
+
             Spacer(Modifier.height(6.dp))
+
             Text(
                 text = "by ${proj.ownerName}",
                 fontSize = 14.sp,
@@ -87,72 +106,75 @@ fun ProjectDetailScreen(
             Spacer(Modifier.height(16.dp))
 
             proj.description?.takeIf { it.isNotBlank() }?.let {
-                Section(title = "Description", value = it)
+                Section("Description", it)
             }
 
             proj.goal?.takeIf { it.isNotBlank() }?.let {
-                Section(title = "Goal", value = it)
+                Section("Goal", it)
             }
 
             if (proj.skills.isNotEmpty()) {
                 Text("Required Skills", fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.height(8.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    proj.skills.forEach { skill ->
-                        AssistChip(onClick = {}, label = { Text(skill) })
+                    proj.skills.forEach {
+                        AssistChip(onClick = {}, label = { Text(it) })
                     }
                 }
                 Spacer(Modifier.height(16.dp))
             }
 
             proj.timeline?.takeIf { it.isNotBlank() }?.let {
-                Section(title = "Expected Timeline", value = it)
+                Section("Expected Timeline", it)
             }
 
             proj.teamSize?.takeIf { it.isNotBlank() }?.let {
-                Section(title = "Team Size Needed", value = it)
+                Section("Team Size Needed", it)
             }
 
             proj.projectType?.takeIf { it.isNotBlank() }?.let {
-                Section(title = "Project Type", value = it)
+                Section("Project Type", it)
             }
 
             proj.commitmentLevel?.takeIf { it.isNotBlank() }?.let {
-                Section(title = "Commitment Level", value = it)
+                Section("Commitment Level", it)
             }
 
             proj.experienceLevel?.takeIf { it.isNotBlank() }?.let {
-                Section(title = "Experience Level", value = it)
+                Section("Experience Level", it)
             }
 
             proj.link?.takeIf { it.isNotBlank() }?.let {
                 Text("Link", fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Link, contentDescription = null, tint = TextSecondary)
+                    Icon(Icons.Default.Link, null, tint = TextSecondary)
                     Spacer(Modifier.width(8.dp))
-                    Text(text = it, color = TextSecondary)
+                    Text(it, color = TextSecondary)
                 }
                 Spacer(Modifier.height(16.dp))
             }
 
             Spacer(modifier = Modifier.weight(1f))
 
-            Button(
-                onClick = { viewModel.requestToJoin(proj) },
-                enabled = !isRequested,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(54.dp),
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor)
-            ) {
-                Icon(Icons.Default.Send, contentDescription = null)
-                Spacer(Modifier.width(10.dp))
-                Text(
-                    text = if (isRequested) "Request Sent" else "Request to Join Project",
-                    fontWeight = FontWeight.Bold
-                )
+            // ✅ BUTTON SHOWN ONLY FOR NON-OWNERS
+            if (!isOwner) {
+                Button(
+                    onClick = { viewModel.requestToJoin(proj) },
+                    enabled = !isRequested,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(54.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor)
+                ) {
+                    Icon(Icons.Default.Send, null)
+                    Spacer(Modifier.width(10.dp))
+                    Text(
+                        text = if (isRequested) "Request Sent" else "Request to Join Project",
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
         }
     }
@@ -162,6 +184,6 @@ fun ProjectDetailScreen(
 private fun Section(title: String, value: String) {
     Text(title, fontWeight = FontWeight.SemiBold)
     Spacer(Modifier.height(4.dp))
-    Text(text = value, color = TextSecondary)
+    Text(value, color = TextSecondary)
     Spacer(Modifier.height(16.dp))
 }
