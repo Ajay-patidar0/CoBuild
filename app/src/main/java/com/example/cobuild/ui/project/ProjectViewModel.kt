@@ -28,25 +28,23 @@ class ProjectViewModel : ViewModel() {
         description: String,
         goal: String,
         skills: String,
-
         timeline: String,
         teamSize: String,
         projectType: String,
         commitmentLevel: String,
         experienceLevel: String,
-
         link: String
     ) {
         val user = auth.currentUser ?: return
         _isLoading.value = true
+        _isSuccess.value = false
 
-        // Fetch profile name from Firestore
         firestore.collection("users")
             .document(user.uid)
             .get()
             .addOnSuccessListener { doc ->
 
-                val profileName =
+                val ownerName =
                     doc.getString("name")
                         ?: doc.getString("username")
                         ?: "Anonymous"
@@ -57,8 +55,8 @@ class ProjectViewModel : ViewModel() {
                     .filter { it.isNotEmpty() }
 
                 repository.addProject(
-                    ownerId = user.uid,
-                    ownerName = profileName,
+                    ownerId = user.uid,               // ✅ ALWAYS saved
+                    ownerName = ownerName,             // ✅ ALWAYS saved
 
                     title = title.trim(),
                     description = description.trim(),
@@ -86,8 +84,8 @@ class ProjectViewModel : ViewModel() {
     }
 
     fun loadProjects() {
-        repository.fetchAllProjects {
-            _projects.value = it
+        repository.fetchAllProjects { list ->
+            _projects.value = list
         }
     }
 }
