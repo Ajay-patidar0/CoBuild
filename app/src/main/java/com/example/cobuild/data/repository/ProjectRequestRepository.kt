@@ -10,9 +10,6 @@ class ProjectRequestRepository {
     private val firestore = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
 
-    /**
-     * Sends a join request for the given project.
-     */
     fun sendJoinRequest(
         project: Project,
         onResult: (Boolean) -> Unit
@@ -44,9 +41,6 @@ class ProjectRequestRepository {
             .addOnFailureListener { onResult(false) }
     }
 
-    /**
-     * Fetches a Project by its ID from Firestore.
-     */
     suspend fun getProjectById(projectId: String): Project? {
         return try {
             val doc = firestore.collection("projects")
@@ -62,16 +56,18 @@ class ProjectRequestRepository {
                     description = doc.getString("description") ?: "",
                     goal = doc.getString("goal") ?: "",
                     skills = doc.get("skills") as? List<String> ?: emptyList(),
-                    timeline = doc.getString("timeline"),
-                    teamSize = doc.getString("teamSize"),
-                    projectType = doc.getString("projectType"),
-                    commitmentLevel = doc.getString("commitmentLevel"),
-                    experienceLevel = doc.getString("experienceLevel"),
+
+                    // FIXED — convert nullable String? to String
+                    timeline = doc.getString("timeline") ?: "",
+                    teamSize = doc.getString("teamSize") ?: "",
+                    projectType = doc.getString("projectType") ?: "",
+                    commitmentLevel = doc.getString("commitmentLevel") ?: "",
+                    experienceLevel = doc.getString("experienceLevel") ?: "",
+
                     link = doc.getString("link")
                 )
-            } else {
-                null
-            }
+            } else null
+
         } catch (e: Exception) {
             e.printStackTrace()
             null

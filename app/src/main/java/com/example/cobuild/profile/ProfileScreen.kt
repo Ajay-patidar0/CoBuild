@@ -1,5 +1,6 @@
 package com.example.cobuild.profile
 
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -42,7 +43,8 @@ fun ProfileScreen(
     onProjectsClick: () -> Unit = {},
     onAddProjectClick: () -> Unit = {},
     onMessagesClick: () -> Unit = {},
-    onProfileClick: () -> Unit = {}
+    onProfileClick: () -> Unit = {},
+    onLogout: () -> Unit = {}
 ) {
     val uid = FirebaseAuth.getInstance().currentUser?.uid
     val db = FirebaseFirestore.getInstance()
@@ -229,6 +231,30 @@ fun ProfileScreen(
                 }
 
                 Spacer(modifier = Modifier.height(40.dp))
+
+                // --- Logout Button ---
+                Button(
+                    onClick = {
+                        FirebaseAuth.getInstance().signOut()
+                        onLogout()
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red.copy(alpha = 0.85f))
+                ) {
+                    Text(
+                        text = "Logout",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+
+
+                Spacer(modifier = Modifier.height(40.dp))
+
             }
         }
     }

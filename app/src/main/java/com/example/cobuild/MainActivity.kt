@@ -11,7 +11,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.cobuild.auth.LoginScreen
-import com.example.cobuild.data.model.Project
 import com.example.cobuild.home.HomeScreen
 import com.example.cobuild.navigation.Destinations
 import com.example.cobuild.profile.ProfileScreen
@@ -21,6 +20,10 @@ import com.example.cobuild.ui.project.ProjectListScreen
 import com.example.cobuild.ui.theme.CoBuildTheme
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+
+// 🔥 ADD THESE CHAT IMPORTS
+import com.example.cobuild.messages.ChatListScreen
+import com.example.cobuild.messages.ChatScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -80,7 +83,10 @@ fun MainApp() {
                 onAddProjectClick = {
                     navController.navigate(Destinations.ADD_PROJECT)
                 },
-                onMessagesClick = {},
+                onMessagesClick = {
+                    // 🔥 CHAT LIST NAVIGATION
+                    navController.navigate("chat_list")
+                },
                 onProfileClick = {
                     navController.navigate(Destinations.PROFILE)
                 },
@@ -107,36 +113,34 @@ fun MainApp() {
                         popUpTo(Destinations.HOME) { inclusive = true }
                     }
                 },
-                onProjectsClick = {
-                    // ✅ NAVIGATE TO PROJECT LIST
-                    navController.navigate(Destinations.PROJECT_LIST)
+                onProjectsClick = { navController.navigate(Destinations.PROJECT_LIST) },
+                onAddProjectClick = { navController.navigate(Destinations.ADD_PROJECT) },
+                onMessagesClick = {
+                    // 🔥 GO TO CHAT LIST
+                    navController.navigate("chat_list")
                 },
-                onAddProjectClick = {
-                    navController.navigate(Destinations.ADD_PROJECT)
-                },
-                onMessagesClick = {},
-                onProfileClick = {}
-            )
-        }
+                onProfileClick = {},
 
-        // ✅ PROJECT LIST SCREEN
-        composable(Destinations.PROJECT_LIST) {
-            ProjectListScreen(
-                onBackClick = { navController.popBackStack() },
-                onProjectClick = { projectId ->
-                    navController.navigate(
-                        "${Destinations.PROJECT_DETAIL}/${projectId}"
-                    )
+                onLogout = {
+                    navController.navigate(Destinations.LOGIN) {
+                        popUpTo(0) { inclusive = true }
+                    }
                 }
             )
         }
 
-        // ✅ PROJECT DETAIL (ID BASED)
+        composable(Destinations.PROJECT_LIST) {
+            ProjectListScreen(
+                onBackClick = { navController.popBackStack() },
+                onProjectClick = { projectId ->
+                    navController.navigate("${Destinations.PROJECT_DETAIL}/${projectId}")
+                }
+            )
+        }
+
         composable(
             route = Destinations.PROJECT_DETAIL_ROUTE,
-            arguments = listOf(
-                navArgument("projectId") { type = NavType.StringType }
-            )
+            arguments = listOf(navArgument("projectId") { type = NavType.StringType })
         ) { backStackEntry ->
             val projectId =
                 backStackEntry.arguments?.getString("projectId") ?: return@composable
@@ -146,6 +150,23 @@ fun MainApp() {
                 onBackClick = { navController.popBackStack() }
             )
         }
-    }
 
+        // 🔥 CHAT LIST SCREEN
+        composable("chat_list") {
+            ChatListScreen(navController)
+        }
+
+        // 🔥 CHAT SCREEN
+        composable(
+            route = "chat/{chatId}",
+            arguments = listOf(navArgument("chatId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val chatId = backStackEntry.arguments?.getString("chatId") ?: return@composable
+
+            ChatScreen(
+                chatId = chatId,
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+    }
 }

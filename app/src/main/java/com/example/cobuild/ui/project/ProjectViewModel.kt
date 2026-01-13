@@ -36,6 +36,7 @@ class ProjectViewModel : ViewModel() {
         link: String
     ) {
         val user = auth.currentUser ?: return
+
         _isLoading.value = true
         _isSuccess.value = false
 
@@ -49,29 +50,23 @@ class ProjectViewModel : ViewModel() {
                         ?: doc.getString("username")
                         ?: "Anonymous"
 
-                val skillsList = skills
-                    .split(",")
+                val skillsList = skills.split(",")
                     .map { it.trim() }
                     .filter { it.isNotEmpty() }
 
                 repository.addProject(
-                    ownerId = user.uid,               // ✅ ALWAYS saved
-                    ownerName = ownerName,             // ✅ ALWAYS saved
-
+                    ownerId = user.uid,
+                    ownerName = ownerName,
                     title = title.trim(),
                     description = description.trim(),
                     goal = goal.trim(),
-
                     skills = skillsList,
-
                     timeline = timeline.trim(),
                     teamSize = teamSize.trim(),
                     projectType = projectType.trim(),
                     commitmentLevel = commitmentLevel.trim(),
                     experienceLevel = experienceLevel.trim(),
-
-                    link = link.takeIf { it.isNotBlank() }
-
+                    link = link.takeIf { it.isNotBlank() },
                 ) { success ->
                     _isLoading.value = false
                     _isSuccess.value = success

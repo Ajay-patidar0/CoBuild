@@ -6,24 +6,22 @@ data class Project(
     val ownerName: String = "",
 
     val title: String = "",
-    val description: String? = null,
-    val goal: String? = null,
+    val description: String = "",
+    val goal: String = "",
 
     val skills: List<String> = emptyList(),
 
-    val timeline: String? = null,
-    val teamSize: String? = null,
-    val projectType: String? = null,
-    val commitmentLevel: String? = null,
-    val experienceLevel: String? = null,
+    val timeline: String = "",
+    val teamSize: String = "",
+    val projectType: String = "",
+    val commitmentLevel: String = "",
+    val experienceLevel: String = "",
 
     val link: String? = null,
 
-    val createdAt: Long = System.currentTimeMillis(),
+    val createdAt: Long = 0L,
 
-    // ADD this field at the bottom of your Project data class
     val status: ProjectStatus = ProjectStatus.YET_TO_START
-
 )
 
 enum class ProjectStatus {
@@ -31,5 +29,3 @@ enum class ProjectStatus {
     IN_PROGRESS,
     COMPLETED
 }
-
-
