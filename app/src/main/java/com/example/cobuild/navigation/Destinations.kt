@@ -11,4 +11,5 @@ object Destinations {
 
     const val PROJECT_DETAIL = "project_detail"
     const val PROJECT_DETAIL_ROUTE = "project_detail/{projectId}"
+    const val NOTIFICATIONS = "notifications"
 }
