@@ -7,6 +7,8 @@ object Destinations {
     const val ADD_PROJECT = "add_project"
     const val PROFILE = "profile"
 
+    const val CHAT_LIST = "chat_list"
+    const val CHAT = "chat/{chatId}"
     const val PROJECT_LIST = "project_list"
 
     const val PROJECT_DETAIL = "project_detail"
