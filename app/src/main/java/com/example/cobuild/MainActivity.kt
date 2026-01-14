@@ -11,10 +11,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.cobuild.auth.LoginScreen
-import com.example.cobuild.data.model.Project
 import com.example.cobuild.home.HomeScreen
 import com.example.cobuild.navigation.Destinations
 import com.example.cobuild.profile.ProfileScreen
+import com.example.cobuild.ui.notification.NotificationScreen
 import com.example.cobuild.ui.project.AddProjectScreen
 import com.example.cobuild.ui.project.ProjectDetailScreen
 import com.example.cobuild.ui.project.ProjectListScreen
@@ -66,6 +66,8 @@ fun MainApp() {
         startDestination = startDestination
     ) {
 
+        /* -------------------- AUTH -------------------- */
+
         composable(Destinations.LOGIN) {
             LoginScreen(navController)
         }
@@ -73,6 +75,8 @@ fun MainApp() {
         composable(Destinations.ONBOARDING) {
             OnBoardingScreen(navController)
         }
+
+        /* -------------------- HOME -------------------- */
 
         composable(Destinations.HOME) {
             HomeScreen(
@@ -88,9 +92,27 @@ fun MainApp() {
                     navController.navigate(
                         "${Destinations.PROJECT_DETAIL}/${project.id}"
                     )
+                },
+                onNotificationClick = {
+                    navController.navigate(Destinations.NOTIFICATIONS)
                 }
             )
         }
+
+        /* -------------------- NOTIFICATIONS -------------------- */
+
+        composable(Destinations.NOTIFICATIONS) {
+            NotificationScreen(
+                onBackClick = { navController.popBackStack() },
+                onJoinRequestClick = { projectId ->
+                    navController.navigate(
+                        "${Destinations.PROJECT_DETAIL}/${projectId}"
+                    )
+                }
+            )
+        }
+
+        /* -------------------- ADD PROJECT -------------------- */
 
         composable(Destinations.ADD_PROJECT) {
             AddProjectScreen(
@@ -100,6 +122,8 @@ fun MainApp() {
             )
         }
 
+        /* -------------------- PROFILE -------------------- */
+
         composable(Destinations.PROFILE) {
             ProfileScreen(
                 onHomeClick = {
@@ -108,7 +132,6 @@ fun MainApp() {
                     }
                 },
                 onProjectsClick = {
-                    // ✅ NAVIGATE TO PROJECT LIST
                     navController.navigate(Destinations.PROJECT_LIST)
                 },
                 onAddProjectClick = {
@@ -119,7 +142,8 @@ fun MainApp() {
             )
         }
 
-        // ✅ PROJECT LIST SCREEN
+        /* -------------------- PROJECT LIST -------------------- */
+
         composable(Destinations.PROJECT_LIST) {
             ProjectListScreen(
                 onBackClick = { navController.popBackStack() },
@@ -131,7 +155,8 @@ fun MainApp() {
             )
         }
 
-        // ✅ PROJECT DETAIL (ID BASED)
+        /* -------------------- PROJECT DETAIL -------------------- */
+
         composable(
             route = Destinations.PROJECT_DETAIL_ROUTE,
             arguments = listOf(
@@ -147,5 +172,4 @@ fun MainApp() {
             )
         }
     }
-
 }
