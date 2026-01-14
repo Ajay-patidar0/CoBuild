@@ -1,6 +1,5 @@
 package com.example.cobuild.home
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -29,8 +28,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.cobuild.R
 import com.example.cobuild.data.model.Project
-import com.example.cobuild.ui.project.ProjectViewModel
 import com.example.cobuild.navigation.Destinations
+import com.example.cobuild.ui.project.ProjectViewModel
 
 /* -------------------- COLORS -------------------- */
 
@@ -46,10 +45,11 @@ private val BorderLight = Color(0xFFE2E8F0)
 @Composable
 fun HomeScreen(
     navController: NavController,
-    onAddProjectClick: () -> Unit = {},
-    onMessagesClick: () -> Unit = {},
-    onProfileClick: () -> Unit = {},
-    onProjectClick: (Project) -> Unit = {}
+    onAddProjectClick: () -> Unit,
+    onMessagesClick: () -> Unit,
+    onProfileClick: () -> Unit,
+    onProjectClick: (Project) -> Unit,
+    onNotificationClick: () -> Unit
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
     val scrollState = rememberScrollState()
@@ -63,22 +63,22 @@ fun HomeScreen(
 
     Scaffold(
         containerColor = BackgroundColor,
-        topBar = { HomeTopBar() },
+        topBar = {
+            HomeTopBar(onNotificationClick)
+        },
         bottomBar = {
             BottomNavigationBar(
                 selectedTab = selectedTab,
                 onTabSelected = { tab ->
                     selectedTab = tab
                     when (tab) {
-                        1 -> {
-                            // Navigate to ProjectListScreen when Projects tab is selected
-                            navController.navigate(Destinations.PROJECT_LIST)
-                        }
-                        2 -> onAddProjectClick()
+                        0 -> navController.navigate(Destinations.HOME)
+                        1 -> navController.navigate(Destinations.PROJECT_LIST)
                         3 -> onMessagesClick()
                         4 -> onProfileClick()
                     }
-                }
+                },
+                onAddClick = onAddProjectClick
             )
         }
     ) { padding ->
@@ -137,9 +137,7 @@ fun HomeScreen(
                             project = project,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable {
-                                    onProjectClick(project)
-                                }
+                                .clickable { onProjectClick(project) }
                         )
                     }
                 }
@@ -154,17 +152,13 @@ fun HomeScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeTopBar() {
+fun HomeTopBar(onNotificationClick: () -> Unit) {
     TopAppBar(
         title = {
             Column {
+                Text("Welcome back 👋", fontSize = 13.sp, color = TextSecondary)
                 Text(
-                    text = "Welcome back 👋",
-                    fontSize = 13.sp,
-                    color = TextSecondary
-                )
-                Text(
-                    text = "CoBuilder",
+                    "CoBuilder",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary
@@ -173,7 +167,7 @@ fun HomeTopBar() {
         },
         actions = {
             IconButton(
-                onClick = {},
+                onClick = onNotificationClick,
                 modifier = Modifier
                     .clip(CircleShape)
                     .background(SurfaceColor)
@@ -182,7 +176,7 @@ fun HomeTopBar() {
             ) {
                 Icon(
                     imageVector = Icons.Outlined.Notifications,
-                    contentDescription = null,
+                    contentDescription = "Notifications",
                     tint = TextPrimary
                 )
             }
@@ -232,40 +226,29 @@ fun AddProjectCTA(onAddProjectClick: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(Modifier.weight(1f)) {
+                Text("Have an idea?", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 Text(
-                    text = "Have an idea?",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-                Text(
-                    text = "Post a project & find collaborators",
+                    "Post a project & find collaborators",
                     fontSize = 14.sp,
                     color = Color.White.copy(alpha = 0.9f)
                 )
             }
-            Icon(
-                Icons.Default.Add,
-                contentDescription = null,
-                tint = Color.White,
-                modifier = Modifier.size(26.dp)
-            )
+            Icon(Icons.Default.Add, null, tint = Color.White, modifier = Modifier.size(26.dp))
         }
     }
 }
 
-/* -------------------- BOTTOM NAV -------------------- */
+/* -------------------- BOTTOM NAV (FIXED) -------------------- */
 
 @Composable
 fun BottomNavigationBar(
     selectedTab: Int,
-    onTabSelected: (Int) -> Unit
+    onTabSelected: (Int) -> Unit,
+    onAddClick: () -> Unit
 ) {
     NavigationBar(
         containerColor = SurfaceColor,
-        modifier = Modifier
-            .border(1.dp, BorderLight, RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
-            .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
+        modifier = Modifier.border(1.dp, BorderLight)
     ) {
 
         NavigationBarItem(
@@ -288,19 +271,19 @@ fun BottomNavigationBar(
             colors = navColors()
         )
 
+        // 🔥 CENTER ADD (NOT SELECTABLE)
         NavigationBarItem(
             selected = false,
-            onClick = { onTabSelected(2) },
+            onClick = onAddClick,
             icon = {
-                Surface(
-                    shape = CircleShape,
-                    color = PrimaryColor,
-                    modifier = Modifier.size(50.dp),
-                    shadowElevation = 6.dp
+                Box(
+                    modifier = Modifier
+                        .size(52.dp)
+                        .clip(CircleShape)
+                        .background(PrimaryColor),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(Icons.Default.Add, null, tint = Color.White)
-                    }
+                    Icon(Icons.Default.Add, null, tint = Color.White)
                 }
             },
             colors = NavigationBarItemDefaults.colors(indicatorColor = Color.Transparent)
@@ -335,7 +318,7 @@ fun navColors() = NavigationBarItemDefaults.colors(
     indicatorColor = Color.Transparent
 )
 
-/* -------------------- COMPACT PROJECT CARD -------------------- */
+/* -------------------- PROJECT CARD -------------------- */
 
 @Composable
 fun CompactProjectCard(
@@ -345,14 +328,13 @@ fun CompactProjectCard(
     Card(
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = SurfaceColor),
-        modifier = modifier
-            .height(100.dp)
+        modifier = modifier.height(100.dp)
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.weight(1f)) {
+            Column(Modifier.weight(1f)) {
                 Text(project.title, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 Spacer(Modifier.height(4.dp))
                 Text("by ${project.ownerName}", color = TextSecondary, fontSize = 12.sp)
