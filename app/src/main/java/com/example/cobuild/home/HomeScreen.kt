@@ -1,6 +1,5 @@
 package com.example.cobuild.home
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -29,8 +28,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.cobuild.R
 import com.example.cobuild.data.model.Project
-import com.example.cobuild.ui.project.ProjectViewModel
 import com.example.cobuild.navigation.Destinations
+import com.example.cobuild.ui.project.ProjectViewModel
 
 /* -------------------- COLORS -------------------- */
 
@@ -42,6 +41,113 @@ private val TextSecondary = Color(0xFF64748B)
 private val BorderLight = Color(0xFFE2E8F0)
 
 /* -------------------- HOME SCREEN -------------------- */
+
+//@Composable
+//fun HomeScreen(
+//    navController: NavController,
+//    onAddProjectClick: () -> Unit = {},
+//    onMessagesClick: () -> Unit = {},
+//    onProfileClick: () -> Unit = {},
+//    onProjectClick: (Project) -> Unit = {}
+//) {
+//    var selectedTab by remember { mutableIntStateOf(0) }
+//    val scrollState = rememberScrollState()
+//
+//    val projectViewModel: ProjectViewModel = viewModel()
+//    val projects by projectViewModel.projects.collectAsState()
+//
+//    LaunchedEffect(Unit) {
+//        projectViewModel.loadProjects()
+//    }
+//
+//    Scaffold(
+//        containerColor = BackgroundColor,
+//        topBar = { HomeTopBar() },
+//        bottomBar = {
+//            BottomNavigationBar(
+//                selectedTab = selectedTab,
+//                onTabSelected = { tab ->
+//                    selectedTab = tab
+//                    when (tab) {
+//                        1 -> {
+//                            // Navigate to ProjectListScreen when Projects tab is selected
+//                            navController.navigate(Destinations.PROJECT_LIST)
+//                        }
+//                        2 -> onAddProjectClick()
+//                        3 -> onMessagesClick()
+//                        4 -> onProfileClick()
+//                    }
+//                }
+//            )
+//        }
+//    ) { padding ->
+//
+//        Column(
+//            modifier = Modifier
+//                .padding(padding)
+//                .verticalScroll(scrollState)
+//                .padding(20.dp)
+//        ) {
+//
+//            SearchBarVisual()
+//
+//            Spacer(Modifier.height(20.dp))
+//
+//            Text(
+//                text = "Build Together.\nGrow Faster.",
+//                fontSize = 28.sp,
+//                fontWeight = FontWeight.Bold,
+//                color = TextPrimary,
+//                lineHeight = 34.sp
+//            )
+//
+//            Spacer(Modifier.height(6.dp))
+//
+//            Text(
+//                text = "Discover ideas and find collaborators",
+//                fontSize = 15.sp,
+//                color = TextSecondary
+//            )
+//
+//            Spacer(Modifier.height(20.dp))
+//
+//            AddProjectCTA(onAddProjectClick)
+//
+//            Spacer(Modifier.height(28.dp))
+//
+//            Text(
+//                text = "Latest Projects",
+//                fontSize = 20.sp,
+//                fontWeight = FontWeight.Bold,
+//                color = TextPrimary
+//            )
+//
+//            Spacer(Modifier.height(14.dp))
+//
+//            if (projects.isEmpty()) {
+//                Text(
+//                    text = "No projects yet. Be the first to post!",
+//                    color = TextSecondary
+//                )
+//            } else {
+//                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+//                    projects.forEach { project ->
+//                        CompactProjectCard(
+//                            project = project,
+//                            modifier = Modifier
+//                                .fillMaxWidth()
+//                                .clickable {
+//                                    onProjectClick(project)
+//                                }
+//                        )
+//                    }
+//                }
+//            }
+//
+//            Spacer(Modifier.height(40.dp))
+//        }
+//    }
+//}
 
 @Composable
 fun HomeScreen(
@@ -55,7 +161,9 @@ fun HomeScreen(
     val scrollState = rememberScrollState()
 
     val projectViewModel: ProjectViewModel = viewModel()
-    val projects by projectViewModel.projects.collectAsState()
+
+    val searchQuery by projectViewModel.searchQuery.collectAsState()
+    val projects by projectViewModel.filteredProjects.collectAsState()
 
     LaunchedEffect(Unit) {
         projectViewModel.loadProjects()
@@ -70,10 +178,7 @@ fun HomeScreen(
                 onTabSelected = { tab ->
                     selectedTab = tab
                     when (tab) {
-                        1 -> {
-                            // Navigate to ProjectListScreen when Projects tab is selected
-                            navController.navigate(Destinations.PROJECT_LIST)
-                        }
+                        1 -> navController.navigate(Destinations.PROJECT_LIST)
                         2 -> onAddProjectClick()
                         3 -> onMessagesClick()
                         4 -> onProfileClick()
@@ -90,7 +195,11 @@ fun HomeScreen(
                 .padding(20.dp)
         ) {
 
-            SearchBarVisual()
+            // 🔍 SEARCH
+            SearchBar(
+                query = searchQuery,
+                onQueryChange = projectViewModel::onSearchQueryChange
+            )
 
             Spacer(Modifier.height(20.dp))
 
@@ -98,36 +207,22 @@ fun HomeScreen(
                 text = "Build Together.\nGrow Faster.",
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
-                color = TextPrimary,
-                lineHeight = 34.sp
+                color = TextPrimary
             )
-
-            Spacer(Modifier.height(6.dp))
-
-            Text(
-                text = "Discover ideas and find collaborators",
-                fontSize = 15.sp,
-                color = TextSecondary
-            )
-
-            Spacer(Modifier.height(20.dp))
-
-            AddProjectCTA(onAddProjectClick)
 
             Spacer(Modifier.height(28.dp))
 
             Text(
                 text = "Latest Projects",
                 fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = TextPrimary
+                fontWeight = FontWeight.Bold
             )
 
             Spacer(Modifier.height(14.dp))
 
             if (projects.isEmpty()) {
                 Text(
-                    text = "No projects yet. Be the first to post!",
+                    text = "No matching projects found",
                     color = TextSecondary
                 )
             } else {
@@ -135,21 +230,24 @@ fun HomeScreen(
                     projects.forEach { project ->
                         CompactProjectCard(
                             project = project,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    onProjectClick(project)
-                                }
+                            modifier = Modifier.fillMaxWidth(),
+
+
+// Card click → open detail
+                            onCardClick = { onProjectClick(it) },
+
+
+// Plus click → send request
+                            onAddClick = { selectedProject ->
+                                projectViewModel.requestToJoinProject(selectedProject) { _, _ -> }
+                            }
                         )
                     }
                 }
             }
-
-            Spacer(Modifier.height(40.dp))
         }
     }
 }
-
 /* -------------------- TOP BAR -------------------- */
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -194,28 +292,54 @@ fun HomeTopBar() {
 
 /* -------------------- SEARCH -------------------- */
 
+//@Composable
+//fun SearchBarVisual() {
+//    Row(
+//        modifier = Modifier
+//            .fillMaxWidth()
+//            .height(52.dp)
+//            .clip(RoundedCornerShape(16.dp))
+//            .background(SurfaceColor)
+//            .border(1.dp, BorderLight, RoundedCornerShape(16.dp))
+//            .padding(horizontal = 16.dp),
+//        verticalAlignment = Alignment.CenterVertically
+//    ) {
+//        Icon(Icons.Default.Search, null, tint = TextSecondary)
+//        Spacer(Modifier.width(12.dp))
+//        Text(
+//            text = "Search projects, skills or people",
+//            fontSize = 14.sp,
+//            color = Color(0xFF94A3B8)
+//        )
+//    }
+//}
 @Composable
-fun SearchBarVisual() {
-    Row(
+fun SearchBar(
+    query: String,
+    onQueryChange: (String) -> Unit
+) {
+    TextField(
+        value = query,
+        onValueChange = onQueryChange,
+        placeholder = {
+            Text("Search projects, skills or people")
+        },
+        leadingIcon = {
+            Icon(Icons.Default.Search, contentDescription = null)
+        },
+        singleLine = true,
         modifier = Modifier
             .fillMaxWidth()
-            .height(52.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(SurfaceColor)
-            .border(1.dp, BorderLight, RoundedCornerShape(16.dp))
-            .padding(horizontal = 16.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(Icons.Default.Search, null, tint = TextSecondary)
-        Spacer(Modifier.width(12.dp))
-        Text(
-            text = "Search projects, skills or people",
-            fontSize = 14.sp,
-            color = Color(0xFF94A3B8)
+            .height(52.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = TextFieldDefaults.colors(
+            focusedContainerColor = SurfaceColor,
+            unfocusedContainerColor = SurfaceColor,
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent
         )
-    }
+    )
 }
-
 /* -------------------- CTA -------------------- */
 
 @Composable
@@ -337,25 +461,65 @@ fun navColors() = NavigationBarItemDefaults.colors(
 
 /* -------------------- COMPACT PROJECT CARD -------------------- */
 
+//@Composable
+//fun CompactProjectCard(
+//    project: Project,
+//    modifier: Modifier = Modifier
+//) {
+//    Card(
+//        shape = RoundedCornerShape(14.dp),
+//        colors = CardDefaults.cardColors(containerColor = SurfaceColor),
+//        modifier = modifier
+//            .height(100.dp)
+//    ) {
+//        Row(
+//            modifier = Modifier.padding(16.dp),
+//            verticalAlignment = Alignment.CenterVertically
+//        ) {
+//            Column(modifier = Modifier.weight(1f)) {
+//                Text(project.title, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+//                Spacer(Modifier.height(4.dp))
+//                Text("by ${project.ownerName}", color = TextSecondary, fontSize = 12.sp)
+//            }
+//        }
+//    }
+//}
 @Composable
 fun CompactProjectCard(
     project: Project,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onCardClick: (Project) -> Unit,
+    onAddClick: (Project) -> Unit
 ) {
     Card(
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = SurfaceColor),
         modifier = modifier
             .height(100.dp)
+            .clickable { onCardClick(project) }
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+
+
             Column(modifier = Modifier.weight(1f)) {
-                Text(project.title, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                Spacer(Modifier.height(4.dp))
-                Text("by ${project.ownerName}", color = TextSecondary, fontSize = 12.sp)
+                Text(project.title, fontWeight = FontWeight.Bold)
+                Text("by ${project.ownerName}", fontSize = 12.sp)
+            }
+
+
+            IconButton(
+                onClick = { onAddClick(project) },
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(PrimaryColor)
+            ) {
+                Icon(Icons.Default.Add, null, tint = Color.White)
             }
         }
     }
