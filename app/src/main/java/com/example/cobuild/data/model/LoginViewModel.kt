@@ -19,17 +19,13 @@ class LoginViewModel : ViewModel() {
 
     private lateinit var googleSignInClient: GoogleSignInClient
 
-    // LiveData to send the SignIn Intent to the Activity
+    // LiveData to expose the sign-in intent
     private val _signInIntent = MutableLiveData<Intent?>()
     val signInIntent: LiveData<Intent?> = _signInIntent
 
-    // Loading state as LiveData (works with observeAsState in Compose)
     val isLoading = MutableLiveData(false)
 
-    /**
-     * Initialize GoogleSignInClient from Activity (call from Activity onCreate)
-     * Replace "YOUR_WEB_CLIENT_ID_HERE" with your Firebase Web client ID (OAuth 2.0 client).
-     */
+    /** Initialize GoogleSignInClient */
     fun initGoogleSignIn(activity: Activity, webClientId: String) {
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestIdToken(webClientId)
@@ -39,26 +35,17 @@ class LoginViewModel : ViewModel() {
         googleSignInClient = GoogleSignIn.getClient(activity, gso)
     }
 
-    /**
-     * Prepare sign-in by exposing the sign-in intent through LiveData.
-     * Activity should observe signInIntent (or check value after calling this).
-     */
+    /** Trigger Google Sign-In Intent */
     fun signIn() {
-        // ensure client is initialized
         try {
-            val intent = googleSignInClient.signInIntent
-            _signInIntent.value = intent
+            _signInIntent.value = googleSignInClient.signInIntent
         } catch (e: UninitializedPropertyAccessException) {
-            // client not initialized; set null or handle error
             _signInIntent.value = null
         }
     }
 
-    /**
-     * Handle result from Google SignIn activity (Activity.onActivityResult)
-     * Pass the returned Intent data into this method.
-     */
-    fun handleGoogleResult(data: Intent?) {
+    /** Handle Google Sign-In result */
+    fun handleGoogleResult(data: Intent?, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
         isLoading.value = true
 
         val task = GoogleSignIn.getSignedInAccountFromIntent(data)
@@ -70,39 +57,48 @@ class LoginViewModel : ViewModel() {
                 val credential = GoogleAuthProvider.getCredential(idToken, null)
                 auth.signInWithCredential(credential)
                     .addOnSuccessListener {
-                        saveUserToFirestore()
+                        saveUserToFirestore(onSuccess)
                     }
-                    .addOnFailureListener {
+                    .addOnFailureListener { e ->
                         isLoading.value = false
+                        onFailure(e)
                     }
             } else {
                 isLoading.value = false
+                onFailure(Exception("Google Sign-In failed: ID Token is null"))
             }
         } catch (e: Exception) {
             isLoading.value = false
+            onFailure(e)
         }
     }
 
-    private fun saveUserToFirestore() {
+    /** Save user to Firestore with stable UID */
+    private fun saveUserToFirestore(onSuccess: () -> Unit) {
         val user = auth.currentUser ?: run {
             isLoading.value = false
             return
         }
 
         val userData = mapOf(
-            "name" to (user.displayName ?: ""),
+            "uid" to user.uid,
+            "name" to (user.displayName ?: "Anonymous"),
             "email" to (user.email ?: ""),
             "photo" to (user.photoUrl?.toString() ?: "")
         )
 
         firestore.collection("users")
-            .document(user.uid)
+            .document(user.uid) // stable UID
             .set(userData)
             .addOnSuccessListener {
                 isLoading.value = false
+                onSuccess() // navigate to onboarding/home
             }
             .addOnFailureListener {
                 isLoading.value = false
             }
     }
+
+    /** Helper to get current user UID */
+    fun getCurrentUserUid(): String? = auth.currentUser?.uid
 }
