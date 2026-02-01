@@ -1,7 +1,6 @@
 package com.example.cobuild.auth
 
 import android.app.Activity
-import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -32,6 +31,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
+import com.google.firebase.firestore.FirebaseFirestore
 
 @Composable
 fun LoginScreen(
@@ -39,6 +39,7 @@ fun LoginScreen(
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val auth = FirebaseAuth.getInstance()
+    val firestore = FirebaseFirestore.getInstance()
 
     // ---------------- GOOGLE CLIENT ----------------
     val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
@@ -46,8 +47,7 @@ fun LoginScreen(
         .requestEmail()
         .build()
 
-    val googleSignInClient: GoogleSignInClient =
-        GoogleSignIn.getClient(context, gso)
+    val googleSignInClient: GoogleSignInClient = GoogleSignIn.getClient(context, gso)
 
     var isLoading by remember { mutableStateOf(false) }
 
@@ -60,17 +60,48 @@ fun LoginScreen(
 
                 try {
                     val account: GoogleSignInAccount? = task.result
-                    val credential =
-                        GoogleAuthProvider.getCredential(account?.idToken, null)
+                    val credential = GoogleAuthProvider.getCredential(account?.idToken, null)
 
+                    isLoading = true
                     auth.signInWithCredential(credential)
                         .addOnCompleteListener { authResult ->
-                            isLoading = false
                             if (authResult.isSuccessful) {
-                                // SUCCESS → GO TO ONBOARDING
-                                navController.navigate("onboarding") {
-                                    popUpTo("login") { inclusive = true }
+                                val user = auth.currentUser
+                                if (user != null) {
+
+                                    // Check if user already exists in Firestore
+                                    val userDocRef = firestore.collection("users").document(user.uid)
+                                    userDocRef.get().addOnSuccessListener { document ->
+                                        if (document.exists()) {
+                                            // User exists → navigate to Home
+                                            isLoading = false
+                                            navController.navigate("home") {
+                                                popUpTo("login") { inclusive = true }
+                                            }
+                                        } else {
+                                            // New user → save basic info and navigate to Onboarding
+                                            val userData = mapOf(
+                                                "uid" to user.uid,
+                                                "name" to (user.displayName ?: ""),
+                                                "email" to (user.email ?: ""),
+                                                "photo" to (user.photoUrl?.toString() ?: "")
+                                            )
+                                            userDocRef.set(userData).addOnCompleteListener {
+                                                isLoading = false
+                                                navController.navigate("onboarding") {
+                                                    popUpTo("login") { inclusive = true }
+                                                }
+                                            }
+                                        }
+                                    }.addOnFailureListener {
+                                        isLoading = false
+                                    }
+
+                                } else {
+                                    isLoading = false
                                 }
+                            } else {
+                                isLoading = false
                             }
                         }
                 } catch (e: Exception) {
@@ -186,10 +217,7 @@ fun LoginScreen(
 
                 // ---------------- GOOGLE SIGN-IN BUTTON ----------------
                 Button(
-                    onClick = {
-                        isLoading = true
-                        launcher.launch(googleSignInClient.signInIntent)
-                    },
+                    onClick = { launcher.launch(googleSignInClient.signInIntent) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp),
