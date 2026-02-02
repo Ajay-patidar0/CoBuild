@@ -25,6 +25,7 @@ import androidx.navigation.NavController
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
@@ -112,6 +113,7 @@ fun OnBoardingScreen(navController: NavController? = null) {
                 CustomInputField("Portfolio Link (Optional)", portfolio, keyboardType = KeyboardType.Uri, onChange = { portfolio = it })
                 Spacer(Modifier.height(24.dp))
 
+                // Inside your Button click
                 Button(
                     onClick = {
                         if (currentUser == null) {
@@ -125,7 +127,9 @@ fun OnBoardingScreen(navController: NavController? = null) {
 
                         isSaving = true
 
+                        // Update existing Firestore user document instead of creating new
                         val userMap = hashMapOf(
+                            "uid" to currentUser.uid,          // Keep UID
                             "name" to name,
                             "role" to role,
                             "skills" to splitCsv(skills),
@@ -135,17 +139,17 @@ fun OnBoardingScreen(navController: NavController? = null) {
                             "linkedin" to linkedin,
                             "github" to github,
                             "portfolio" to portfolio,
-                            "createdAt" to Timestamp.now()
+                            "updatedAt" to Timestamp.now()     // Track updates
                         )
 
                         firestore.collection("users")
                             .document(currentUser.uid)
-                            .set(userMap)
+                            .set(userMap, SetOptions.merge()) // <-- merge ensures existing UID/data isn't lost
                             .addOnSuccessListener {
                                 isSaving = false
                                 Toast.makeText(context, "Profile Saved!", Toast.LENGTH_SHORT).show()
 
-                                // MOVE TO HOME SCREEN
+                                // Navigate to Home Screen
                                 navController?.navigate("home") {
                                     popUpTo("onboarding") { inclusive = true }
                                 }
@@ -172,6 +176,7 @@ fun OnBoardingScreen(navController: NavController? = null) {
                         Text("Save Profile", fontSize = 18.sp, color = Color.White)
                     }
                 }
+
             }
         }
     }
