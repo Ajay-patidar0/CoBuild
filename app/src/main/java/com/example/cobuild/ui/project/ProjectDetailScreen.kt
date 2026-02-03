@@ -15,7 +15,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.cobuild.data.model.Project
 import com.google.firebase.auth.FirebaseAuth
 
 private val PrimaryColor = Color(0xFF4F46E5)
@@ -27,19 +26,21 @@ private val BackgroundColor = Color(0xFFF8FAFC)
 @Composable
 fun ProjectDetailScreen(
     projectId: String,
+    requesterName: String, // Pass the name from onboarding
     onBackClick: () -> Unit
 ) {
     val viewModel: ProjectRequestViewModel = viewModel()
-    val isRequested by viewModel.isRequested.collectAsState(initial = false)
+    val isRequested by viewModel.isRequested.collectAsState()
 
-    // ✅ Get current user safely
-    val currentUserId = remember {
-        FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
+    val currentUserId = FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
+    val project by viewModel.getProjectById(projectId).collectAsState(initial = null)
+    val proj = project
+    val isOwner = proj?.ownerId == currentUserId
+
+    // Check if already requested when screen loads
+    LaunchedEffect(projectId) {
+        viewModel.checkIfRequested(projectId)
     }
-
-    val project by viewModel
-        .getProjectById(projectId)
-        .collectAsState(initial = null)
 
     Scaffold(
         containerColor = BackgroundColor,
@@ -48,38 +49,46 @@ fun ProjectDetailScreen(
                 title = { Text("Project Details") },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Default.ArrowBack, null)
                     }
                 }
             )
+        },
+        bottomBar = {
+            if (proj != null && !isOwner) {
+                Surface(tonalElevation = 8.dp) {
+                    Button(
+                        onClick = { viewModel.requestToJoin(proj, requesterName) },
+                        enabled = !isRequested,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                            .height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = PrimaryColor,
+                            contentColor = Color.White,
+                            disabledContainerColor = PrimaryColor.copy(alpha = 0.6f)
+                        )
+                    ) {
+                        Text(
+                            text = if (isRequested) "Request Sent" else "Request to Join Project",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
         }
     ) { padding ->
-
-        if (project == null) {
+        if (proj == null) {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
+                modifier = Modifier.fillMaxSize().padding(padding),
                 contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator(color = PrimaryColor)
             }
             return@Scaffold
-        }
-
-        val proj = project!!
-
-        /**
-         * ✅ FINAL OWNER CHECK (FAILSAFE)
-         * Hide button IF:
-         * - user is owner
-         * - OR ownerId missing (old data)
-         * - OR user not logged in
-         */
-        val isOwner = remember(proj.ownerId, currentUserId) {
-            proj.ownerId.isNullOrBlank() ||
-                    currentUserId.isBlank() ||
-                    proj.ownerId == currentUserId
         }
 
         Column(
@@ -88,60 +97,20 @@ fun ProjectDetailScreen(
                 .padding(20.dp)
                 .fillMaxSize()
         ) {
-            Text(
-                text = proj.title,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
-                color = TextPrimary
-            )
-
+            Text(proj.title, fontSize = 22.sp, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(6.dp))
-
-            Text(
-                text = "by ${proj.ownerName}",
-                fontSize = 14.sp,
-                color = TextSecondary
-            )
-
+            Text("by ${proj.ownerName}", color = TextSecondary)
             Spacer(Modifier.height(16.dp))
-
-            proj.description?.takeIf { it.isNotBlank() }?.let {
-                Section("Description", it)
-            }
-
-            proj.goal?.takeIf { it.isNotBlank() }?.let {
-                Section("Goal", it)
-            }
+            proj.description?.let { Section("Description", it) }
+            proj.goal?.let { Section("Goal", it) }
 
             if (proj.skills.isNotEmpty()) {
                 Text("Required Skills", fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    proj.skills.forEach {
-                        AssistChip(onClick = {}, label = { Text(it) })
-                    }
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    proj.skills.forEach { AssistChip(onClick = {}, label = { Text(it) }) }
                 }
                 Spacer(Modifier.height(16.dp))
-            }
-
-            proj.timeline?.takeIf { it.isNotBlank() }?.let {
-                Section("Expected Timeline", it)
-            }
-
-            proj.teamSize?.takeIf { it.isNotBlank() }?.let {
-                Section("Team Size Needed", it)
-            }
-
-            proj.projectType?.takeIf { it.isNotBlank() }?.let {
-                Section("Project Type", it)
-            }
-
-            proj.commitmentLevel?.takeIf { it.isNotBlank() }?.let {
-                Section("Commitment Level", it)
-            }
-
-            proj.experienceLevel?.takeIf { it.isNotBlank() }?.let {
-                Section("Experience Level", it)
             }
 
             proj.link?.takeIf { it.isNotBlank() }?.let {
@@ -152,30 +121,9 @@ fun ProjectDetailScreen(
                     Spacer(Modifier.width(8.dp))
                     Text(it, color = TextSecondary)
                 }
-                Spacer(Modifier.height(16.dp))
             }
 
-            Spacer(modifier = Modifier.weight(1f))
-
-            // ✅ BUTTON SHOWN ONLY FOR NON-OWNERS
-            if (!isOwner) {
-                Button(
-                    onClick = { viewModel.requestToJoin(proj) },
-                    enabled = !isRequested,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(54.dp),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor)
-                ) {
-                    Icon(Icons.Default.Send, null)
-                    Spacer(Modifier.width(10.dp))
-                    Text(
-                        text = if (isRequested) "Request Sent" else "Request to Join Project",
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
+            Spacer(Modifier.height(80.dp))
         }
     }
 }
