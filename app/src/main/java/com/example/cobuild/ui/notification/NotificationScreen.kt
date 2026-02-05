@@ -6,12 +6,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.cobuild.data.model.AppNotification
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -19,30 +19,16 @@ fun NotificationScreen(
     onBackClick: () -> Unit,
     onJoinRequestClick: (String) -> Unit
 ) {
-    // 🔹 Temporary dummy notifications (replace with ViewModel later)
-    val notifications = listOf(
-        AppNotification(
-            id = "1",
-            requesterId = "user_123",
-            requesterName = "Ajay",
-            projectId = "project_001",
-            projectTitle = "AI Study Partner",
-            isRead = false
-        )
-    )
+    val viewModel: NotificationViewModel = viewModel()
+    val notifications by viewModel.notifications.collectAsState()
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = {
-                    Text(
-                        text = "Notifications",
-                        fontWeight = FontWeight.SemiBold
-                    )
-                },
+                title = { Text("Notifications", fontWeight = FontWeight.SemiBold) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = null)
+                        Icon(Icons.Default.ArrowBack, null)
                     }
                 }
             )
@@ -56,7 +42,7 @@ fun NotificationScreen(
                     .padding(padding),
                 contentAlignment = Alignment.Center
             ) {
-                Text("No notifications yet")
+                Text("No join requests yet")
             }
         } else {
             LazyColumn(
@@ -68,10 +54,7 @@ fun NotificationScreen(
                 items(notifications) { notification ->
                     NotificationCard(
                         notification = notification,
-                        onClick = {
-                            // 🔥 Navigate to Join Request / Project Detail
-                            onJoinRequestClick(notification.projectId)
-                        }
+                        onClick = { onJoinRequestClick(notification.projectId) }
                     )
                 }
             }
