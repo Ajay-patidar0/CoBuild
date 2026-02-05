@@ -1,37 +1,54 @@
 package com.example.cobuild.data.repository
 
+import android.util.Log
 import com.example.cobuild.data.model.AppNotification
+import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 
 class NotificationRepository {
 
     private val firestore = FirebaseFirestore.getInstance()
 
-    fun getNotifications(
-        userId: String,
-        onResult: (List<AppNotification>) -> Unit
-    ) {
-        firestore.collection("notifications")
-            .whereEqualTo("userId", userId)
-            .orderBy("createdAt", com.google.firebase.firestore.Query.Direction.DESCENDING)
-            .addSnapshotListener { snapshot, _ ->
-                if (snapshot == null) {
-                    onResult(emptyList())
+    fun observeJoinRequestsForOwner(ownerId: String): Flow<List<AppNotification>> = callbackFlow {
+
+        val listener = firestore.collection("project_requests")
+            .whereEqualTo("ownerId", ownerId)
+            .whereEqualTo("status", "pending")
+            .orderBy("createdAt", Query.Direction.ASCENDING)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    Log.e("NotificationRepo", "Error fetching notifications: ${error.message}")
+                    trySend(emptyList())
                     return@addSnapshotListener
                 }
 
-                val list = snapshot.documents.mapNotNull { doc ->
-                    doc.toObject(AppNotification::class.java)
-                        ?.copy(id = doc.id)
+                if (snapshot != null) {
+                    val list = snapshot.documents.map { doc ->
+                        AppNotification(
+                            id = doc.getString("requestId") ?: doc.id,
+                            userId = doc.getString("requesterId") ?: "", // <-- use requesterId as userId
+                            type = "join_request",
+                            requesterId = doc.getString("requesterId") ?: "",
+                            requesterName = doc.getString("requesterName") ?: "User",
+                            projectId = doc.getString("projectId") ?: "",
+                            projectTitle = doc.getString("projectTitle") ?: "",
+                            isRead = doc.getBoolean("isRead") ?: false,
+                            createdAt = (doc.get("createdAt") as? Timestamp)?.toDate()?.time
+                                ?: System.currentTimeMillis()
+                        )
+                    }
+                    Log.d("NotificationRepo", "Fetched ${list.size} notifications")
+                    trySend(list)
+                } else {
+                    Log.d("NotificationRepo", "No notifications found")
+                    trySend(emptyList())
                 }
-
-                onResult(list)
             }
-    }
 
-    fun markAsRead(notificationId: String) {
-        firestore.collection("notifications")
-            .document(notificationId)
-            .update("isRead", true)
+        awaitClose { listener.remove() }
     }
 }
