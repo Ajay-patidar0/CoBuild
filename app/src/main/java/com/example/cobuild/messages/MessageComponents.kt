@@ -14,7 +14,7 @@ import androidx.compose.ui.unit.dp
 import com.example.cobuild.model.Message
 import androidx.compose.material.icons.filled.Send
 @Composable
-fun MessageBubble(message: Message, isMe: Boolean) {
+fun MessageBubblee(message: Message, isMe: Boolean) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = if (isMe) Arrangement.End else Arrangement.Start
@@ -37,7 +37,7 @@ fun MessageBubble(message: Message, isMe: Boolean) {
 }
 
 @Composable
-fun MessageInput(
+fun MessageInputt(
     text: String,
     onTextChange: (String) -> Unit,
     onSend: () -> Unit
