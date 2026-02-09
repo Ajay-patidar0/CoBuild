@@ -55,7 +55,9 @@ fun HomeScreen(
     val scrollState = rememberScrollState()
 
     val projectViewModel: ProjectViewModel = viewModel()
-    val projects by projectViewModel.projects.collectAsState()
+    val searchQuery by projectViewModel.searchQuery.collectAsState()
+    val projects by projectViewModel.filteredProjects.collectAsState()
+
 
     LaunchedEffect(Unit) {
         projectViewModel.loadProjects()
@@ -90,7 +92,12 @@ fun HomeScreen(
                 .padding(20.dp)
         ) {
 
-            SearchBarVisual()
+//            SearchBarVisual()
+            SearchBarVisual(
+                query = searchQuery,
+                onQueryChange = projectViewModel::onSearchQueryChange
+            )
+
 
             Spacer(Modifier.height(20.dp))
 
@@ -188,27 +195,59 @@ fun HomeTopBar(onNotificationClick: () -> Unit) {
 
 /* -------------------- SEARCH -------------------- */
 
+//@Composable
+//fun SearchBarVisual() {
+//    Row(
+//        modifier = Modifier
+//            .fillMaxWidth()
+//            .height(52.dp)
+//            .clip(RoundedCornerShape(16.dp))
+//            .background(SurfaceColor)
+//            .border(1.dp, BorderLight, RoundedCornerShape(16.dp))
+//            .padding(horizontal = 16.dp),
+//        verticalAlignment = Alignment.CenterVertically
+//    ) {
+//        Icon(Icons.Default.Search, null, tint = TextSecondary)
+//        Spacer(Modifier.width(12.dp))
+//        Text(
+//            text = "Search projects, skills or people",
+//            fontSize = 14.sp,
+//            color = Color(0xFF94A3B8)
+//        )
+//    }
+//}
 @Composable
-fun SearchBarVisual() {
-    Row(
+fun SearchBarVisual(
+    query: String,
+    onQueryChange: (String) -> Unit
+) {
+    TextField(
+        value = query,
+        onValueChange = onQueryChange,
+        placeholder = {
+            Text(
+                text = "Search projects, skills or people",
+                fontSize = 14.sp,
+                color = Color(0xFF94A3B8)
+            )
+        },
+        leadingIcon = {
+            Icon(Icons.Default.Search, null, tint = TextSecondary)
+        },
+        singleLine = true,
         modifier = Modifier
             .fillMaxWidth()
-            .height(52.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(SurfaceColor)
-            .border(1.dp, BorderLight, RoundedCornerShape(16.dp))
-            .padding(horizontal = 16.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(Icons.Default.Search, null, tint = TextSecondary)
-        Spacer(Modifier.width(12.dp))
-        Text(
-            text = "Search projects, skills or people",
-            fontSize = 14.sp,
-            color = Color(0xFF94A3B8)
+            .height(52.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = TextFieldDefaults.colors(
+            focusedContainerColor = SurfaceColor,
+            unfocusedContainerColor = SurfaceColor,
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent
         )
-    }
+    )
 }
+
 
 /* -------------------- CTA -------------------- */
 

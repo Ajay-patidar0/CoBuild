@@ -93,6 +93,11 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 
 class ProjectViewModel : ViewModel() {
 
@@ -108,6 +113,44 @@ class ProjectViewModel : ViewModel() {
 
     private val _projects = MutableStateFlow<List<Project>>(emptyList())
     val projects = _projects.asStateFlow()
+
+
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery = _searchQuery.asStateFlow()
+
+    /**
+     * Filter projects based on search query
+     * Matches: title, description, ownerName, skills
+     */
+    val filteredProjects: StateFlow<List<Project>> =
+        combine(
+            _projects,
+            _searchQuery
+        ) { projects: List<Project>, query: String ->
+
+
+        if (query.isBlank()) {
+                projects
+            } else {
+                val q = query.trim().lowercase()
+
+                projects.filter { project ->
+                    project.title.lowercase().contains(q) ||
+                            project.description.lowercase().contains(q) ||
+                            project.ownerName.lowercase().contains(q) ||
+                            project.skills.any { it.lowercase().contains(q) }
+                }
+            }
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = emptyList()
+        )
+
+    fun onSearchQueryChange(query: String) {
+        _searchQuery.value = query
+    }
+
 
     /* -------------------- ADD PROJECT -------------------- */
 
