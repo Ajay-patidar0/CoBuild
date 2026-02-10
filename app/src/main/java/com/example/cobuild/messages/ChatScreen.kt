@@ -189,7 +189,7 @@ fun ChatScreen(
         bottomBar = {
             MessageInput(
                 text = text,
-                onTextChange = { newText -> text = newText },
+                onTextChange = { text = it }, // ✅ inference fixed
                 onSend = {
                     if (text.isBlank()) return@MessageInput
 
@@ -223,7 +223,7 @@ fun ChatScreen(
             state = listState,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
+                .padding(padding) // ✅ correct inset handling
                 .padding(horizontal = 12.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
@@ -235,6 +235,7 @@ fun ChatScreen(
             }
         }
     }
+
 }
 
 /* -------------------- MESSAGE BUBBLE -------------------- */
@@ -268,19 +269,21 @@ fun MessageBubble(
 }
 
 /* -------------------- MESSAGE INPUT -------------------- */
-
 @Composable
 fun MessageInput(
     text: String,
     onTextChange: (String) -> Unit,
     onSend: () -> Unit
 ) {
-    Surface(tonalElevation = 6.dp) {
+    Surface(
+        tonalElevation = 6.dp,
+        modifier = Modifier
+            .fillMaxWidth()
+            .navigationBarsPadding() // ✅ FIXES 3-button nav
+            .imePadding()            // ✅ FIXES keyboard
+    ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .imePadding()
-                .padding(8.dp),
+            modifier = Modifier.padding(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
 

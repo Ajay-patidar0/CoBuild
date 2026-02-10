@@ -18,7 +18,7 @@ data class Project(
     val experienceLevel: String = "",
 
     val link: String? = null,
-
+    val members: List<String> = emptyList(),
     val createdAt: Long = 0L,
 
     val status: ProjectStatus = ProjectStatus.YET_TO_START

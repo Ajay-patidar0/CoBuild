@@ -129,13 +129,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.cobuild.model.Chat
 import com.example.cobuild.model.User
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatListScreen(navController: NavController) {
 
@@ -154,35 +154,31 @@ fun ChatListScreen(navController: NavController) {
             }
     }
 
-    Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        text = "Messages",
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-            )
-        }
-    ) { padding ->
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFF9FAFB))
+            .statusBarsPadding()
+    ) {
+
+        // Header
+        Text(
+            text = "Messages",
+            fontSize = 22.sp,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(16.dp)
+        )
 
         LazyColumn(
-            modifier = Modifier
-                .padding(padding)
-                .fillMaxSize()
-                .background(Color(0xFFF8FAFC)),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = PaddingValues(12.dp)
+            modifier = Modifier.fillMaxSize()
         ) {
             items(chats) { chat ->
                 ChatRow(
                     chat = chat,
-                    currentUserId = currentUserId,
-                    onClick = {
-                        navController.navigate("chat/${chat.chatId}")
-                    }
-                )
+                    currentUserId = currentUserId
+                ) {
+                    navController.navigate("chat/${chat.chatId}")
+                }
             }
         }
     }
@@ -210,55 +206,61 @@ fun ChatRow(
             }
     }
 
-    Surface(
-        shape = RoundedCornerShape(16.dp),
-        tonalElevation = 2.dp,
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() }
+            .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
 
-            // Avatar
+        Row(verticalAlignment = Alignment.CenterVertically) {
+
+            // Avatar (Clean & soft)
             Box(
                 modifier = Modifier
-                    .size(52.dp)
+                    .size(48.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFFE5E7EB)),
+                    .background(Color(0xFFE0E7FF)),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = user?.name?.firstOrNull()?.uppercase() ?: "?",
+                    fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF4F46E5)
+                    color = Color(0xFF4338CA)
                 )
             }
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
+            Column(modifier = Modifier.weight(1f)) {
+
                 Text(
                     text = user?.name ?: "User",
+                    fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(3.dp))
 
                 Text(
                     text = chat.lastMessage.ifBlank { "Say hi 👋" },
-                    color = Color(0xFF64748B),
+                    fontSize = 13.sp,
+                    color = Color(0xFF6B7280),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
             }
         }
+
+        // Soft divider (no black box feeling)
+        Divider(
+            modifier = Modifier.padding(top = 12.dp),
+            color = Color(0xFFE5E7EB),
+            thickness = 0.6.dp
+        )
     }
 }
+

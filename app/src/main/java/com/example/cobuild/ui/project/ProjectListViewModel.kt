@@ -18,20 +18,24 @@ class ProjectListViewModel : ViewModel() {
 
     fun loadProjects(userId: String) {
 
-        // Joined Projects
+        // ✅ JOINED PROJECTS (REALTIME)
         firestore.collection("projects")
-            .whereArrayContains("memberIds", userId)
+            .whereArrayContains("members", userId)
             .addSnapshotListener { snapshot, _ ->
-                _joinedProjects.value =
-                    snapshot?.toObjects(Project::class.java) ?: emptyList()
+                _joinedProjects.value = snapshot?.documents
+                    ?.mapNotNull { doc ->
+                        doc.toObject(Project::class.java)?.copy(id = doc.id)
+                    } ?: emptyList()
             }
 
-        // Posted Projects
+        // ✅ POSTED PROJECTS (REALTIME)
         firestore.collection("projects")
             .whereEqualTo("ownerId", userId)
             .addSnapshotListener { snapshot, _ ->
-                _postedProjects.value =
-                    snapshot?.toObjects(Project::class.java) ?: emptyList()
+                _postedProjects.value = snapshot?.documents
+                    ?.mapNotNull { doc ->
+                        doc.toObject(Project::class.java)?.copy(id = doc.id)
+                    } ?: emptyList()
             }
     }
 }

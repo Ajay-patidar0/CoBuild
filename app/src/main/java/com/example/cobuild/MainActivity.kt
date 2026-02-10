@@ -271,11 +271,20 @@ fun MainApp() {
         composable(Destinations.NOTIFICATIONS) {
             NotificationScreen(
                 onBackClick = { navController.popBackStack() },
-                onJoinRequestClick = { projectId ->
-                    navController.navigate("${Destinations.PROJECT_DETAIL}/${projectId}")
+
+                // 🔥 Chat
+                onOpenChatClick = { chatId ->
+                    navController.navigate("chat/$chatId")
+                },
+
+                // 🔥 Project detail
+                onOpenProjectClick = { projectId ->
+                    navController.navigate("${Destinations.PROJECT_DETAIL}/$projectId")
                 }
             )
         }
+
+
 
         /* -------------------- ADD PROJECT -------------------- */
         composable(Destinations.ADD_PROJECT) {
