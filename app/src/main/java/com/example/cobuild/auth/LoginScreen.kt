@@ -41,7 +41,7 @@ fun LoginScreen(
     val auth = FirebaseAuth.getInstance()
     val firestore = FirebaseFirestore.getInstance()
 
-    // ---------------- GOOGLE CLIENT ----------------
+
     val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
         .requestIdToken(context.getString(R.string.default_web_client_id))
         .requestEmail()
@@ -51,7 +51,6 @@ fun LoginScreen(
 
     var isLoading by remember { mutableStateOf(false) }
 
-    // ---------------- ACTIVITY RESULT LAUNCHER ----------------
     val launcher =
         rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
 
