@@ -101,7 +101,8 @@ fun NotificationScreen(
     onOpenChatClick: (String) -> Unit,
 
     // 🔥 opens project_detail/{projectId}
-    onOpenProjectClick: (String) -> Unit
+    onOpenProjectClick: (String) -> Unit,
+    onOpenProfileClick: (String) -> Unit
 ) {
     val viewModel: NotificationViewModel = viewModel()
     val notifications by viewModel.notifications.collectAsState()
@@ -139,17 +140,14 @@ fun NotificationScreen(
                     NotificationCard(
                         notification = notification,
 
-                        // ✅ Accept
                         onAccept = {
                             viewModel.acceptRequest(notification)
                         },
 
-                        // ✅ Deny
                         onDeny = {
                             viewModel.denyRequest(notification)
                         },
 
-                        // ✅ Open CHAT (button only)
                         onOpenChat = {
                             viewModel.openChat(
                                 notification = notification,
@@ -159,9 +157,12 @@ fun NotificationScreen(
                             )
                         },
 
-                        // ✅ Open PROJECT (tap anywhere else)
                         onOpenProject = {
                             onOpenProjectClick(notification.projectId)
+                        },
+
+                        onOpenProfile = {
+                            onOpenProfileClick(notification.userId) // 🔥 PASS USER ID
                         }
                     )
                 }
