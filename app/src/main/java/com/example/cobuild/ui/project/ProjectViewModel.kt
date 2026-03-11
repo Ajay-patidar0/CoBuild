@@ -84,26 +84,26 @@
 //        }
 //    }
 //}
+
 package com.example.cobuild.ui.project
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.cobuild.data.model.Project
 import com.example.cobuild.data.repository.ProjectRepository
+import com.example.cobuild.home.ProjectFilters
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 
 class ProjectViewModel : ViewModel() {
 
     private val repository = ProjectRepository()
     private val auth = FirebaseAuth.getInstance()
     private val firestore = FirebaseFirestore.getInstance()
+
+    /* -------------------- STATES -------------------- */
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
@@ -114,43 +114,107 @@ class ProjectViewModel : ViewModel() {
     private val _projects = MutableStateFlow<List<Project>>(emptyList())
     val projects = _projects.asStateFlow()
 
-
     private val _searchQuery = MutableStateFlow("")
     val searchQuery = _searchQuery.asStateFlow()
 
-    /**
-     * Filter projects based on search query
-     * Matches: title, description, ownerName, skills
-     */
+    private val _filters = MutableStateFlow(ProjectFilters())
+    val filters = _filters.asStateFlow()
+
+    /* -------------------- FILTERED PROJECTS -------------------- */
+
     val filteredProjects: StateFlow<List<Project>> =
         combine(
             _projects,
-            _searchQuery
-        ) { projects: List<Project>, query: String ->
+            _searchQuery,
+            _filters
+        ) { projects, query, filters ->
 
+            var result = projects
 
-        if (query.isBlank()) {
-                projects
-            } else {
+            // 🔎 SEARCH FILTER
+            if (query.isNotBlank()) {
                 val q = query.trim().lowercase()
-
-                projects.filter { project ->
+                result = result.filter { project ->
                     project.title.lowercase().contains(q) ||
                             project.description.lowercase().contains(q) ||
                             project.ownerName.lowercase().contains(q) ||
                             project.skills.any { it.lowercase().contains(q) }
                 }
             }
+
+            // 🎯 COMMITMENT LEVEL
+            filters.commitmentLevel?.let {
+                result = result.filter { project ->
+                    project.commitmentLevel == it
+                }
+            }
+
+            // 🎯 EXPERIENCE LEVEL
+            filters.experienceLevel?.let {
+                result = result.filter { project ->
+                    project.experienceLevel == it
+                }
+            }
+
+            // 🎯 PROJECT TYPE
+            filters.projectType?.let {
+                result = result.filter { project ->
+                    project.projectType == it
+                }
+            }
+
+            // 🎯 STATUS
+            filters.status?.let {
+                result = result.filter { project ->
+                    project.status.name == it
+                }
+            }
+
+            // 🎯 TIMELINE
+            filters.timeline?.let {
+                result = result.filter { project ->
+                    project.timeline == it
+                }
+            }
+
+            // 🎯 TEAM SIZE
+            filters.teamSize?.let {
+                result = result.filter { project ->
+                    project.teamSize == it
+                }
+            }
+
+            // 🎯 SKILLS (multi-select match)
+            if (filters.skills.isNotEmpty()) {
+                result = result.filter { project ->
+                    filters.skills.any { skill ->
+                        project.skills.contains(skill)
+                    }
+                }
+            }
+
+            result
         }.stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
+            started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
+
+    /* -------------------- SEARCH -------------------- */
 
     fun onSearchQueryChange(query: String) {
         _searchQuery.value = query
     }
 
+    /* -------------------- APPLY FILTERS -------------------- */
+
+    fun applyFilters(newFilters: ProjectFilters) {
+        _filters.value = newFilters
+    }
+
+    fun clearFilters() {
+        _filters.value = ProjectFilters()
+    }
 
     /* -------------------- ADD PROJECT -------------------- */
 
@@ -217,7 +281,7 @@ class ProjectViewModel : ViewModel() {
         }
     }
 
-    /* -------------------- REQUEST TO JOIN (WITH CHAT) -------------------- */
+    /* -------------------- REQUEST TO JOIN -------------------- */
 
     fun requestToJoin(project: Project, requesterName: String) {
         val currentUser = auth.currentUser ?: return
@@ -236,13 +300,10 @@ class ProjectViewModel : ViewModel() {
             "createdAt" to System.currentTimeMillis()
         )
 
-        // 1️⃣ Save project request
         firestore.collection("project_requests")
             .document(requestId)
             .set(requestData)
             .addOnSuccessListener {
-
-                // 2️⃣ Create chat immediately (even if pending)
                 createChatIfNotExists(
                     ownerId = project.ownerId,
                     requesterId = requesterId,
@@ -271,10 +332,8 @@ class ProjectViewModel : ViewModel() {
                             pid == projectId
                 }
 
-                // ✅ Chat already exists → do nothing
                 if (existingChat != null) return@addOnSuccessListener
 
-                // 🔥 Create new chat
                 val chatData = hashMapOf(
                     "participants" to listOf(ownerId, requesterId),
                     "projectId" to projectId,
