@@ -84,7 +84,6 @@
 //        }
 //    }
 //}
-
 package com.example.cobuild.ui.project
 
 import androidx.lifecycle.ViewModel
@@ -96,6 +95,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import androidx.compose.runtime.mutableStateOf
 
 class ProjectViewModel : ViewModel() {
 
@@ -119,6 +119,40 @@ class ProjectViewModel : ViewModel() {
 
     private val _filters = MutableStateFlow(ProjectFilters())
     val filters = _filters.asStateFlow()
+
+    /* -------------------- USER SKILLS -------------------- */
+
+    private val _userSkills = MutableStateFlow<List<String>>(emptyList())
+    val userSkills = _userSkills.asStateFlow()
+
+    fun loadUserSkills(uid: String) {
+
+        FirebaseFirestore.getInstance()
+            .collection("users")
+            .document(uid)
+            .get()
+            .addOnSuccessListener { doc ->
+                _userSkills.value = doc.get("skills") as? List<String> ?: emptyList()
+            }
+    }
+
+    /* -------------------- SKILL MATCH LOGIC -------------------- */
+
+    fun calculateSkillMatch(projectSkills: List<String>): Int {
+
+        val skills = userSkills.value
+
+        if (projectSkills.isEmpty()) return 0
+        if (skills.isEmpty()) return 0
+
+        val matchCount = projectSkills.count { projectSkill: String ->
+            skills.any { userSkill: String ->
+                userSkill.equals(projectSkill, ignoreCase = true)
+            }
+        }
+
+        return ((matchCount.toFloat() / projectSkills.size) * 100).toInt()
+    }
 
     /* -------------------- FILTERED PROJECTS -------------------- */
 

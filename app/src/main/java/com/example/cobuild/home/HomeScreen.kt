@@ -25,7 +25,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.cobuild.data.model.Project
 import com.example.cobuild.navigation.Destinations
+import com.example.cobuild.ui.project.CompactProjectCard
 import com.example.cobuild.ui.project.ProjectViewModel
+import com.google.firebase.auth.FirebaseAuth
 
 /* -------------------- COLORS -------------------- */
 
@@ -55,11 +57,18 @@ fun HomeScreen(
     val scrollState = rememberScrollState()
 
     val projectViewModel: ProjectViewModel = viewModel()
+
     val searchQuery by projectViewModel.searchQuery.collectAsState()
     val projects by projectViewModel.filteredProjects.collectAsState()
+    val userSkills by projectViewModel.userSkills.collectAsState()
 
     LaunchedEffect(Unit) {
         projectViewModel.loadProjects()
+
+        val uid = FirebaseAuth.getInstance().currentUser?.uid
+        if (uid != null) {
+            projectViewModel.loadUserSkills(uid)
+        }
     }
 
     Scaffold(
@@ -148,6 +157,7 @@ fun HomeScreen(
                     projects.forEach { project ->
                         CompactProjectCard(
                             project = project,
+                            userSkills = userSkills,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable { onProjectClick(project) }
@@ -425,6 +435,23 @@ fun ChipGroupMulti(
         Spacer(Modifier.height(16.dp))
     }
 }
+
+fun calculateSkillMatch(
+    userSkills: List<String>,
+    projectSkills: List<String>
+): Int {
+
+    if (projectSkills.isEmpty()) return 0
+
+    val matchCount = projectSkills.count { projectSkill ->
+        userSkills.any { userSkill ->
+            userSkill.equals(projectSkill, ignoreCase = true)
+        }
+    }
+
+    return ((matchCount.toFloat() / projectSkills.size) * 100).toInt()
+}
+
 
 /* -------------------- CTA -------------------- */
 

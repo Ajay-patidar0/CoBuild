@@ -18,30 +18,73 @@ private val TextPrimary = Color(0xFF1E293B)
 private val TextSecondary = Color(0xFF64748B)
 private val PrimaryColor = Color(0xFF4F46E5)
 
+/* -------------------- SKILL MATCH FUNCTION -------------------- */
+
+fun calculateSkillMatch(
+    userSkills: List<String>,
+    projectSkills: List<String>
+): Int {
+
+    if (projectSkills.isEmpty()) return 0
+    if (userSkills.isEmpty()) return 0
+
+    val matchCount = projectSkills.count { projectSkill ->
+        userSkills.any { userSkill ->
+            userSkill.equals(projectSkill, ignoreCase = true)
+        }
+    }
+
+    return ((matchCount.toFloat() / projectSkills.size) * 100).toInt()
+}
+
+/* -------------------- PROJECT CARD -------------------- */
+
 @Composable
 fun CompactProjectCard(
-    project: Project
+    project: Project,
+    userSkills: List<String>,
+    modifier: Modifier = Modifier
 ) {
+
+    val matchPercentage = calculateSkillMatch(
+        userSkills,
+        project.skills
+    )
+
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         border = BorderStroke(1.dp, BorderLight),
         colors = CardDefaults.cardColors(
             containerColor = Color.White
         )
     ) {
+
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
 
-            Text(
-                text = project.title.ifBlank { "Untitled Project" },
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                color = TextPrimary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+
+                Text(
+                    text = project.title.ifBlank { "Untitled Project" },
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                Text(
+                    text = "$matchPercentage%",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = PrimaryColor
+                )
+            }
 
             Spacer(modifier = Modifier.height(4.dp))
 
@@ -63,16 +106,18 @@ fun CompactProjectCard(
                 overflow = TextOverflow.Ellipsis
             )
 
-
             Spacer(modifier = Modifier.height(12.dp))
 
             if (project.skills.isNotEmpty()) {
+
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
+
                     project.skills
                         .take(3)
                         .forEach { skill ->
+
                             AssistChip(
                                 onClick = {},
                                 label = {
@@ -89,6 +134,15 @@ fun CompactProjectCard(
                         }
                 }
             }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Text(
+                text = "$matchPercentage% Skill Match",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = PrimaryColor
+            )
         }
     }
 }
