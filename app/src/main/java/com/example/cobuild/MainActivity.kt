@@ -17,14 +17,17 @@ import com.example.cobuild.profile.ProfileScreen
 import com.example.cobuild.ui.notification.NotificationScreen
 import com.example.cobuild.ui.profile.ProfileViewScreen
 import com.example.cobuild.ui.project.AddProjectScreen
+import com.example.cobuild.ui.project.EditProjectScreen
 import com.example.cobuild.ui.project.ProjectDetailScreen
 import com.example.cobuild.ui.project.ProjectListScreen
 import com.example.cobuild.ui.theme.CoBuildTheme
 import com.example.cobuild.data.model.Project
+import com.example.cobuild.ui.project.HomeProjectDetailScreen
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -48,14 +51,21 @@ fun MainApp() {
     var startDestination by remember { mutableStateOf(Destinations.LOGIN) }
     var requesterName by remember { mutableStateOf("") }
 
+    /* ---------------- CHECK USER SESSION ---------------- */
+
     LaunchedEffect(Unit) {
+
         if (currentUser == null) {
+
             startDestination = Destinations.LOGIN
+
         } else {
+
             firestore.collection("users")
                 .document(currentUser.uid)
                 .get()
                 .addOnSuccessListener { doc ->
+
                     if (doc.exists()) {
                         requesterName = doc.getString("name") ?: "User"
                         startDestination = Destinations.HOME
@@ -68,6 +78,8 @@ fun MainApp() {
                 }
         }
     }
+
+    /* ---------------- NAVIGATION ---------------- */
 
     NavHost(
         navController = navController,
@@ -87,22 +99,33 @@ fun MainApp() {
         /* ---------------- HOME ---------------- */
 
         composable(Destinations.HOME) {
+
             HomeScreen(
                 navController = navController,
+
                 onAddProjectClick = {
                     navController.navigate(Destinations.ADD_PROJECT)
                 },
+
                 onMessagesClick = {
                     navController.navigate(Destinations.CHAT_LIST)
                 },
+
                 onProfileClick = {
                     navController.navigate(Destinations.PROFILE)
                 },
-                onProjectClick = { project: Project ->   // ✅ Explicit type FIX
+
+//                onProjectClick = { project: Project ->
+//                    navController.navigate(
+//                        Destinations.projectDetailRoute(project.id)
+//                    )
+//                },
+                onProjectClick = { project: Project ->
                     navController.navigate(
-                        Destinations.projectDetailRoute(project.id)
+                        Destinations.homeProjectDetailRoute(project.id)
                     )
                 },
+
                 onNotificationClick = {
                     navController.navigate(Destinations.NOTIFICATIONS)
                 }
@@ -120,9 +143,7 @@ fun MainApp() {
         composable(
             route = Destinations.CHAT,
             arguments = listOf(
-                navArgument("chatId") {
-                    type = NavType.StringType
-                }
+                navArgument("chatId") { type = NavType.StringType }
             )
         ) { backStackEntry ->
 
@@ -143,19 +164,19 @@ fun MainApp() {
             NotificationScreen(
                 onBackClick = { navController.popBackStack() },
 
-                onOpenChatClick = { chatId: String ->
+                onOpenChatClick = { chatId ->
                     navController.navigate(
                         Destinations.chatRoute(chatId)
                     )
                 },
 
-                onOpenProjectClick = { projectId: String ->
+                onOpenProjectClick = { projectId ->
                     navController.navigate(
                         Destinations.projectDetailRoute(projectId)
                     )
                 },
 
-                onOpenProfileClick = { userId: String ->
+                onOpenProfileClick = { userId ->
                     navController.navigate(
                         Destinations.profileViewRoute(userId)
                     )
@@ -163,9 +184,26 @@ fun MainApp() {
             )
         }
 
+        // ✅ ADD THIS BLOCK — home discovery detail screen
+        composable(
+            route = Destinations.HOME_PROJECT_DETAIL_ROUTE,
+            arguments = listOf(
+                navArgument("projectId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+
+            val projectId = backStackEntry.arguments?.getString("projectId")
+                ?: return@composable
+
+            HomeProjectDetailScreen(
+                projectId   = projectId,
+                onBackClick = { navController.popBackStack() }
+            )
+        }
         /* ---------------- ADD PROJECT ---------------- */
 
         composable(Destinations.ADD_PROJECT) {
+
             AddProjectScreen(
                 onProjectPosted = {
                     navController.popBackStack()
@@ -183,15 +221,19 @@ fun MainApp() {
                         popUpTo(Destinations.HOME) { inclusive = true }
                     }
                 },
+
                 onProjectsClick = {
                     navController.navigate(Destinations.PROJECT_LIST)
                 },
+
                 onAddProjectClick = {
                     navController.navigate(Destinations.ADD_PROJECT)
                 },
+
                 onMessagesClick = {
                     navController.navigate(Destinations.CHAT_LIST)
                 },
+
                 onProfileClick = {}
             )
         }
@@ -201,9 +243,7 @@ fun MainApp() {
         composable(
             route = Destinations.PROFILE_VIEW_ROUTE,
             arguments = listOf(
-                navArgument("userId") {
-                    type = NavType.StringType
-                }
+                navArgument("userId") { type = NavType.StringType }
             )
         ) { backStackEntry ->
 
@@ -213,9 +253,7 @@ fun MainApp() {
 
             ProfileViewScreen(
                 userId = userId,
-                onBackClick = {
-                    navController.popBackStack()
-                }
+                onBackClick = { navController.popBackStack() }
             )
         }
 
@@ -225,9 +263,16 @@ fun MainApp() {
 
             ProjectListScreen(
                 onBackClick = { navController.popBackStack() },
-                onProjectClick = { projectId: String ->
+
+                onProjectClick = { projectId ->
                     navController.navigate(
                         Destinations.projectDetailRoute(projectId)
+                    )
+                },
+
+                onEditProject = { projectId ->
+                    navController.navigate(
+                        Destinations.editProjectRoute(projectId)
                     )
                 }
             )
@@ -238,9 +283,7 @@ fun MainApp() {
         composable(
             route = Destinations.PROJECT_DETAIL_ROUTE,
             arguments = listOf(
-                navArgument("projectId") {
-                    type = NavType.StringType
-                }
+                navArgument("projectId") { type = NavType.StringType }
             )
         ) { backStackEntry ->
 
@@ -252,6 +295,25 @@ fun MainApp() {
                 projectId = projectId,
                 requesterName = requesterName,
                 onBackClick = { navController.popBackStack() }
+            )
+        }
+
+        /* ---------------- EDIT PROJECT ---------------- */
+
+        composable(
+            route = Destinations.EDIT_PROJECT_ROUTE,
+            arguments = listOf(
+                navArgument("projectId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+
+            val projectId =
+                backStackEntry.arguments?.getString("projectId")
+                    ?: return@composable
+
+            EditProjectScreen(
+                projectId = projectId,
+                onBack = { navController.popBackStack() }
             )
         }
     }

@@ -38,5 +38,21 @@ object Destinations {
         return "project_detail/$projectId"
     }
 
+    /* -------- HOME PROJECT DETAIL (discovery/join view) -------- */
+    const val HOME_PROJECT_DETAIL_ROUTE = "home_project_detail/{projectId}"
+
+    fun homeProjectDetailRoute(projectId: String): String {
+        return "home_project_detail/$projectId"
+    }
+
+
+    /* -------- EDIT PROJECT (NEW) -------- */
+
+    const val EDIT_PROJECT_ROUTE = "edit_project/{projectId}"
+
+    fun editProjectRoute(projectId: String): String {
+        return "edit_project/$projectId"
+    }
+
     const val NOTIFICATIONS = "notifications"
 }

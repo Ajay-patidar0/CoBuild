@@ -153,6 +153,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -173,8 +174,11 @@ private val PrimaryColor = Color(0xFF4F46E5)
 fun ProjectCard(
     project: Project,
     onClick: () -> Unit,
-    onMembersClick: (List<String>) -> Unit
+    onMembersClick: (List<String>) -> Unit,
+    canEdit: Boolean = false,
+    onEditClick: (() -> Unit)? = null
 ) {
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         onClick = onClick,
@@ -183,6 +187,7 @@ fun ProjectCard(
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
+
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -190,18 +195,37 @@ fun ProjectCard(
         ) {
 
             /* ---------- HEADER ---------- */
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                ProjectStatusChip(project.status)
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+
+                    ProjectStatusChip(project.status)
+
+                    Spacer(Modifier.width(8.dp))
+
+                    // Edit icon only for posted projects
+                    if (canEdit && onEditClick != null) {
+                        IconButton(onClick = onEditClick) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "Edit Project",
+                                tint = PrimaryColor
+                            )
+                        }
+                    }
+                }
 
                 // 👥 MEMBERS COUNT
                 TextButton(
                     onClick = { onMembersClick(project.members) },
                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
                 ) {
+
                     Text(
                         text = "👥 ${project.members.size}",
                         fontSize = 12.sp,
@@ -214,6 +238,7 @@ fun ProjectCard(
             Spacer(Modifier.height(10.dp))
 
             /* ---------- TITLE ---------- */
+
             Text(
                 text = project.title.ifBlank { "Untitled Project" },
                 fontSize = 18.sp,
@@ -224,6 +249,7 @@ fun ProjectCard(
             )
 
             /* ---------- OWNER ---------- */
+
             Text(
                 text = "by ${project.ownerName.ifBlank { "Unknown" }}",
                 fontSize = 13.sp,
@@ -233,6 +259,7 @@ fun ProjectCard(
             Spacer(Modifier.height(12.dp))
 
             /* ---------- DESCRIPTION ---------- */
+
             Text(
                 text = project.description?.takeIf { it.isNotBlank() }
                     ?: "No description provided.",
@@ -246,6 +273,7 @@ fun ProjectCard(
             Spacer(Modifier.height(16.dp))
 
             /* ---------- FOOTER ---------- */
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -257,11 +285,15 @@ fun ProjectCard(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier.weight(1f)
                 ) {
+
                     if (project.skills.isNotEmpty()) {
+
                         project.skills.take(2).forEach {
                             SkillChip(it)
                         }
+
                         if (project.skills.size > 2) {
+
                             Text(
                                 "+${project.skills.size - 2}",
                                 fontSize = 12.sp,
@@ -269,7 +301,9 @@ fun ProjectCard(
                                 fontWeight = FontWeight.SemiBold
                             )
                         }
+
                     } else {
+
                         Text(
                             "No skills",
                             fontSize = 12.sp,
@@ -289,12 +323,15 @@ fun ProjectCard(
 }
 
 /* ---------- SKILL CHIP ---------- */
+
 @Composable
 private fun SkillChip(text: String) {
+
     Surface(
         color = PrimaryColor.copy(alpha = 0.08f),
         shape = RoundedCornerShape(8.dp)
     ) {
+
         Text(
             text = text,
             fontSize = 12.sp,

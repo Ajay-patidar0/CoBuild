@@ -160,7 +160,8 @@ fun HomeScreen(
                             userSkills = userSkills,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { onProjectClick(project) }
+//                                .clickable { onProjectClick(project) }
+                                .clickable { navController.navigate(Destinations.homeProjectDetailRoute(project.id)) }
                         )
                     }
                 }
