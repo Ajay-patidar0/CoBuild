@@ -1,5 +1,6 @@
 package com.example.cobuild.navigation
 
+import android.net.Uri
 object Destinations {
 
     const val LOGIN = "login"
@@ -44,6 +45,11 @@ object Destinations {
     fun homeProjectDetailRoute(projectId: String): String {
         return "home_project_detail/$projectId"
     }
+
+
+
+    const val GROUP_CHAT_ROUTE = "group_chat/{projectId}/{projectTitle}"
+    fun groupChatRoute(projectId: String, title: String) = "group_chat/$projectId/${Uri.encode(title)}"
 
 
     /* -------- EDIT PROJECT (NEW) -------- */
