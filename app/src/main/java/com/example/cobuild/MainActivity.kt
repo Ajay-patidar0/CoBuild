@@ -507,8 +507,14 @@ fun MainApp() {
         }
 
         /* ── 1-ON-1 CHAT LIST ── */
+//        composable(Destinations.CHAT_LIST) {
+//            ChatListScreen(navController)
+//        }
         composable(Destinations.CHAT_LIST) {
-            ChatListScreen(navController)
+            ChatListScreen(
+                navController = navController,
+                onBackClick   = { navController.popBackStack() }
+            )
         }
 
         /* ── 1-ON-1 CHAT ── */
