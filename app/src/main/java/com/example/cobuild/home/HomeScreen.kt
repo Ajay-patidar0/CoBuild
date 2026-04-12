@@ -1,3 +1,576 @@
+//package com.example.cobuild.home
+//
+//import androidx.compose.foundation.background
+//import androidx.compose.foundation.border
+//import androidx.compose.foundation.clickable
+//import androidx.compose.foundation.layout.*
+//import androidx.compose.foundation.rememberScrollState
+//import androidx.compose.foundation.shape.CircleShape
+//import androidx.compose.foundation.shape.RoundedCornerShape
+//import androidx.compose.foundation.verticalScroll
+//import androidx.compose.foundation.layout.FlowRow
+//import androidx.compose.material.icons.Icons
+//import androidx.compose.material.icons.filled.*
+//import androidx.compose.material.icons.outlined.Notifications
+//import androidx.compose.material3.*
+//import androidx.compose.runtime.*
+//import androidx.compose.ui.Alignment
+//import androidx.compose.ui.Modifier
+//import androidx.compose.ui.draw.clip
+//import androidx.compose.ui.graphics.Color
+//import androidx.compose.ui.text.font.FontWeight
+//import androidx.compose.ui.unit.dp
+//import androidx.compose.ui.unit.sp
+//import androidx.lifecycle.viewmodel.compose.viewModel
+//import androidx.navigation.NavController
+//import com.example.cobuild.data.model.Project
+//import com.example.cobuild.navigation.Destinations
+//import com.example.cobuild.ui.project.CompactProjectCard
+//import com.example.cobuild.ui.project.ProjectViewModel
+//import com.google.firebase.auth.FirebaseAuth
+//
+///* -------------------- COLORS -------------------- */
+//
+//private val PrimaryColor = Color(0xFF4F46E5)
+//private val BackgroundColor = Color(0xFFF8FAFC)
+//private val SurfaceColor = Color.White
+//private val TextPrimary = Color(0xFF1E293B)
+//private val TextSecondary = Color(0xFF64748B)
+//private val BorderLight = Color(0xFFE2E8F0)
+//
+//
+///* -------------------- HOME SCREEN -------------------- */
+//
+//@Composable
+//fun HomeScreen(
+//    navController: NavController,
+//    onAddProjectClick: () -> Unit,
+//    onMessagesClick: () -> Unit,
+//    onProfileClick: () -> Unit,
+//    onProjectClick: (Project) -> Unit,
+//    onNotificationClick: () -> Unit
+//) {
+//
+//    var selectedTab by remember { mutableIntStateOf(0) }
+//    var showFilters by remember { mutableStateOf(false) }
+//
+//    val scrollState = rememberScrollState()
+//
+//    val projectViewModel: ProjectViewModel = viewModel()
+//
+//    val searchQuery by projectViewModel.searchQuery.collectAsState()
+//    val projects by projectViewModel.filteredProjects.collectAsState()
+//    val userSkills by projectViewModel.userSkills.collectAsState()
+//
+//    LaunchedEffect(Unit) {
+//        projectViewModel.loadProjects()
+//
+//        val uid = FirebaseAuth.getInstance().currentUser?.uid
+//        if (uid != null) {
+//            projectViewModel.loadUserSkills(uid)
+//        }
+//    }
+//
+//    Scaffold(
+//        containerColor = BackgroundColor,
+//        topBar = { HomeTopBar(onNotificationClick) },
+//        bottomBar = {
+//            BottomNavigationBar(
+//                selectedTab = selectedTab,
+//                onTabSelected = { tab ->
+//                    selectedTab = tab
+//                    when (tab) {
+//                        0 -> navController.navigate(Destinations.HOME)
+//                        1 -> navController.navigate(Destinations.PROJECT_LIST)
+//                        3 -> onMessagesClick()
+//                        4 -> onProfileClick()
+//                    }
+//                },
+//                onAddClick = onAddProjectClick
+//            )
+//        }
+//    ) { padding ->
+//
+//        Column(
+//            modifier = Modifier
+//                .padding(padding)
+//                .verticalScroll(scrollState)
+//                .padding(20.dp)
+//        ) {
+//
+//            if (showFilters) {
+//                FilterBottomSheet(
+//                    onDismiss = { showFilters = false },
+//                    onApply = {
+//                        projectViewModel.applyFilters(it)
+//                        showFilters = false
+//                    }
+//                )
+//            }
+//
+//            SearchBarVisual(
+//                query = searchQuery,
+//                onQueryChange = projectViewModel::onSearchQueryChange,
+//                onFilterClick = { showFilters = true }
+//            )
+//
+//            Spacer(Modifier.height(20.dp))
+//
+//            Text(
+//                text = "Build Together.\nGrow Faster.",
+//                fontSize = 28.sp,
+//                fontWeight = FontWeight.Bold,
+//                color = TextPrimary,
+//                lineHeight = 34.sp
+//            )
+//
+//            Spacer(Modifier.height(6.dp))
+//
+//            Text(
+//                text = "Discover ideas and find collaborators",
+//                fontSize = 15.sp,
+//                color = TextSecondary
+//            )
+//
+//            Spacer(Modifier.height(20.dp))
+//
+//            AddProjectCTA(onAddProjectClick)
+//
+//            Spacer(Modifier.height(28.dp))
+//
+//            Text(
+//                text = "Latest Projects",
+//                fontSize = 20.sp,
+//                fontWeight = FontWeight.Bold,
+//                color = TextPrimary
+//            )
+//
+//            Spacer(Modifier.height(14.dp))
+//
+//            if (projects.isEmpty()) {
+//                Text(
+//                    text = "No projects yet. Be the first to post!",
+//                    color = TextSecondary
+//                )
+//            } else {
+//                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+//                    projects.forEach { project ->
+//                        CompactProjectCard(
+//                            project = project,
+//                            userSkills = userSkills,
+//                            modifier = Modifier
+//                                .fillMaxWidth()
+////                                .clickable { onProjectClick(project) }
+//                                .clickable { navController.navigate(Destinations.homeProjectDetailRoute(project.id)) }
+//                        )
+//                    }
+//                }
+//            }
+//
+//            Spacer(Modifier.height(40.dp))
+//        }
+//    }
+//}
+//
+///* -------------------- TOP BAR -------------------- */
+//
+//@OptIn(ExperimentalMaterial3Api::class)
+//@Composable
+//fun HomeTopBar(onNotificationClick: () -> Unit) {
+//    TopAppBar(
+//        title = {
+//            Column {
+//                Text("Welcome back 👋", fontSize = 13.sp, color = TextSecondary)
+//                Text("CoBuilder", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+//            }
+//        },
+//        actions = {
+//            IconButton(
+//                onClick = onNotificationClick,
+//                modifier = Modifier
+//                    .clip(CircleShape)
+//                    .background(SurfaceColor)
+//                    .border(1.dp, BorderLight, CircleShape)
+//                    .size(42.dp)
+//            ) {
+//                Icon(Icons.Outlined.Notifications, null, tint = TextPrimary)
+//            }
+//            Spacer(Modifier.width(12.dp))
+//        },
+//        colors = TopAppBarDefaults.topAppBarColors(containerColor = BackgroundColor)
+//    )
+//}
+//
+///* -------------------- SEARCH -------------------- */
+//
+//@Composable
+//fun SearchBarVisual(
+//    query: String,
+//    onQueryChange: (String) -> Unit,
+//    onFilterClick: () -> Unit
+//) {
+//
+//    Row(
+//        modifier = Modifier
+//            .fillMaxWidth()
+//            .height(52.dp)
+//            .clip(RoundedCornerShape(16.dp))
+//            .background(SurfaceColor)
+//            .border(1.dp, BorderLight, RoundedCornerShape(16.dp))
+//            .padding(horizontal = 16.dp),
+//        verticalAlignment = Alignment.CenterVertically
+//    ) {
+//
+//        Icon(Icons.Default.Search, null, tint = TextSecondary)
+//
+//        Spacer(Modifier.width(12.dp))
+//
+//        TextField(
+//            value = query,
+//            onValueChange = onQueryChange,
+//            placeholder = {
+//                Text(
+//                    "Search projects, skills or people",
+//                    fontSize = 14.sp,
+//                    color = Color(0xFF94A3B8)
+//                )
+//            },
+//            singleLine = true,
+//            modifier = Modifier.weight(1f),
+//            colors = TextFieldDefaults.colors(
+//                focusedContainerColor = Color.Transparent,
+//                unfocusedContainerColor = Color.Transparent,
+//                focusedIndicatorColor = Color.Transparent,
+//                unfocusedIndicatorColor = Color.Transparent
+//            )
+//        )
+//
+//        IconButton(onClick = onFilterClick) {
+//            Icon(Icons.Default.Tune, null, tint = TextSecondary)
+//        }
+//    }
+//}
+//
+///* -------------------- FILTER SHEET -------------------- */
+//
+//@OptIn(ExperimentalMaterial3Api::class)
+//@Composable
+//fun FilterBottomSheet(
+//    onDismiss: () -> Unit,
+//    onApply: (ProjectFilters) -> Unit
+//) {
+//
+//    var commitment by remember { mutableStateOf<String?>(null) }
+//    var experience by remember { mutableStateOf<String?>(null) }
+//    var status by remember { mutableStateOf<String?>(null) }
+//
+//    var selectedSkills by remember { mutableStateOf(setOf<String>()) }
+//
+//    ModalBottomSheet(onDismissRequest = onDismiss) {
+//
+//        Column(
+//            Modifier
+//                .padding(20.dp)
+//                .verticalScroll(rememberScrollState())
+//        ) {
+//
+//            Row(
+//                modifier = Modifier.fillMaxWidth(),
+//                horizontalArrangement = Arrangement.SpaceBetween,
+//                verticalAlignment = Alignment.CenterVertically
+//            ) {
+//
+//                Text("Filters", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+//
+//                TextButton(
+//                    onClick = {
+//
+//                        commitment = null
+//                        experience = null
+//                        status = null
+//                        selectedSkills = emptySet()
+//
+//                        onApply(
+//                            ProjectFilters(
+//                                commitmentLevel = null,
+//                                experienceLevel = null,
+//                                status = null,
+//                                skills = emptyList()
+//                            )
+//                        )
+//
+//                        onDismiss()
+//                    }
+//                ) {
+//                    Text("Clear All")
+//                }
+//            }
+//
+//            Spacer(Modifier.height(20.dp))
+//
+//            ChipGroupSingle(
+//                "Commitment Level",
+//                listOf("Low", "Medium", "High")
+//            ) { commitment = it }
+//
+//            ChipGroupSingle(
+//                "Experience Level",
+//                listOf("Beginner", "Intermediate", "Advanced")
+//            ) { experience = it }
+//
+//            ChipGroupMulti(
+//                "Skills",
+//                listOf("Kotlin", "Firebase", "UI/UX", "React", "ML", "Flutter")
+//            ) { selectedSkills = it }
+//
+//            ChipGroupSingle(
+//                "Status",
+//                listOf("YET_TO_START", "IN_PROGRESS", "COMPLETED")
+//            ) { status = it }
+//
+//            Spacer(Modifier.height(24.dp))
+//
+//            Button(
+//                onClick = {
+//                    onApply(
+//                        ProjectFilters(
+//                            commitmentLevel = commitment,
+//                            experienceLevel = experience,
+//                            status = status,
+//                            skills = selectedSkills.toList()
+//                        )
+//                    )
+//                },
+//                modifier = Modifier.fillMaxWidth()
+//            ) {
+//                Text("Apply Filters")
+//            }
+//
+//            Spacer(Modifier.height(30.dp))
+//        }
+//    }
+//}
+//
+///* -------------------- CHIP GROUP (SINGLE SELECT) -------------------- */
+//
+//@Composable
+//fun ChipGroupSingle(
+//    title: String,
+//    options: List<String>,
+//    onSelected: (String?) -> Unit
+//) {
+//
+//    var selected by remember { mutableStateOf<String?>(null) }
+//
+//    Column {
+//
+//        Text(title, fontWeight = FontWeight.SemiBold)
+//
+//        Spacer(Modifier.height(8.dp))
+//
+//        FlowRow(
+//            horizontalArrangement = Arrangement.spacedBy(8.dp),
+//            verticalArrangement = Arrangement.spacedBy(8.dp)
+//        ) {
+//
+//            options.forEach { option ->
+//
+//                FilterChip(
+//                    selected = selected == option,
+//                    onClick = {
+//                        selected = if (selected == option) null else option
+//                        onSelected(selected)
+//                    },
+//                    label = { Text(option) }
+//                )
+//            }
+//        }
+//
+//        Spacer(Modifier.height(16.dp))
+//    }
+//}
+//
+///* -------------------- CHIP GROUP (MULTI SELECT) -------------------- */
+//
+//@Composable
+//fun ChipGroupMulti(
+//    title: String,
+//    options: List<String>,
+//    onSelectionChanged: (Set<String>) -> Unit
+//) {
+//
+//    var selectedItems by remember { mutableStateOf(setOf<String>()) }
+//
+//    Column {
+//
+//        Text(title, fontWeight = FontWeight.SemiBold)
+//
+//        Spacer(Modifier.height(8.dp))
+//
+//        FlowRow(
+//            horizontalArrangement = Arrangement.spacedBy(8.dp),
+//            verticalArrangement = Arrangement.spacedBy(8.dp)
+//        ) {
+//
+//            options.forEach { option ->
+//
+//                val selected = selectedItems.contains(option)
+//
+//                FilterChip(
+//                    selected = selected,
+//                    onClick = {
+//
+//                        selectedItems = if (selected) {
+//                            selectedItems - option
+//                        } else {
+//                            selectedItems + option
+//                        }
+//
+//                        onSelectionChanged(selectedItems)
+//                    },
+//                    label = { Text(option) }
+//                )
+//            }
+//        }
+//
+//        Spacer(Modifier.height(16.dp))
+//    }
+//}
+//
+//fun calculateSkillMatch(
+//    userSkills: List<String>,
+//    projectSkills: List<String>
+//): Int {
+//
+//    if (projectSkills.isEmpty()) return 0
+//
+//    val matchCount = projectSkills.count { projectSkill ->
+//        userSkills.any { userSkill ->
+//            userSkill.equals(projectSkill, ignoreCase = true)
+//        }
+//    }
+//
+//    return ((matchCount.toFloat() / projectSkills.size) * 100).toInt()
+//}
+//
+//
+///* -------------------- CTA -------------------- */
+//
+//@Composable
+//fun AddProjectCTA(onAddProjectClick: () -> Unit) {
+//
+//    Card(
+//        shape = RoundedCornerShape(18.dp),
+//        colors = CardDefaults.cardColors(containerColor = PrimaryColor),
+//        modifier = Modifier
+//            .fillMaxWidth()
+//            .clickable { onAddProjectClick() }
+//    ) {
+//
+//        Row(
+//            modifier = Modifier.padding(18.dp),
+//            verticalAlignment = Alignment.CenterVertically
+//        ) {
+//
+//            Column(Modifier.weight(1f)) {
+//                Text("Have an idea?", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
+//                Text("Post a project & find collaborators", fontSize = 14.sp, color = Color.White.copy(alpha = 0.9f))
+//            }
+//
+//            Icon(Icons.Default.Add, null, tint = Color.White, modifier = Modifier.size(26.dp))
+//        }
+//    }
+//}
+//
+///* -------------------- PROJECT CARD -------------------- */
+//
+//@Composable
+//fun CompactProjectCard(
+//    project: Project,
+//    modifier: Modifier = Modifier
+//) {
+//
+//    Card(
+//        shape = RoundedCornerShape(14.dp),
+//        colors = CardDefaults.cardColors(containerColor = SurfaceColor),
+//        modifier = modifier.height(100.dp)
+//    ) {
+//
+//        Row(
+//            modifier = Modifier.padding(16.dp),
+//            verticalAlignment = Alignment.CenterVertically
+//        ) {
+//
+//            Column(Modifier.weight(1f)) {
+//
+//                Text(project.title, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+//
+//                Spacer(Modifier.height(4.dp))
+//
+//                Text("by ${project.ownerName}", color = TextSecondary, fontSize = 12.sp)
+//            }
+//        }
+//    }
+//}
+//
+///* -------------------- NAV COLORS -------------------- */
+//
+//@Composable
+//fun navColors() = NavigationBarItemDefaults.colors(
+//    selectedIconColor = PrimaryColor,
+//    unselectedIconColor = Color(0xFF94A3B8),
+//    indicatorColor = Color.Transparent
+//)
+//
+//@Composable
+//fun BottomNavigationBar(
+//    selectedTab: Int,
+//    onTabSelected: (Int) -> Unit,
+//    onAddClick: () -> Unit
+//) {
+//
+//    NavigationBar(
+//        containerColor = SurfaceColor
+//    ) {
+//
+//        NavigationBarItem(
+//            selected = selectedTab == 0,
+//            onClick = { onTabSelected(0) },
+//            icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
+//            colors = navColors()
+//        )
+//
+//        NavigationBarItem(
+//            selected = selectedTab == 1,
+//            onClick = { onTabSelected(1) },
+//            icon = { Icon(Icons.Default.List, contentDescription = "Projects") },
+//            colors = navColors()
+//        )
+//
+//        NavigationBarItem(
+//            selected = false,
+//            onClick = onAddClick,
+//            icon = { Icon(Icons.Default.AddCircle, contentDescription = "Add") },
+//            colors = navColors()
+//        )
+//
+//        NavigationBarItem(
+//            selected = selectedTab == 3,
+//            onClick = { onTabSelected(3) },
+//            icon = { Icon(Icons.Default.Email, contentDescription = "Messages") },
+//            colors = navColors()
+//        )
+//
+//        NavigationBarItem(
+//            selected = selectedTab == 4,
+//            onClick = { onTabSelected(4) },
+//            icon = { Icon(Icons.Default.Person, contentDescription = "Profile") },
+//            colors = navColors()
+//        )
+//    }
+//}
+
+
 package com.example.cobuild.home
 
 import androidx.compose.foundation.background
@@ -9,6 +582,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.Notifications
@@ -17,8 +592,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -28,18 +605,26 @@ import com.example.cobuild.navigation.Destinations
 import com.example.cobuild.ui.project.CompactProjectCard
 import com.example.cobuild.ui.project.ProjectViewModel
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
-/* -------------------- COLORS -------------------- */
-
-private val PrimaryColor = Color(0xFF4F46E5)
+/* ── colours ── */
+private val PrimaryColor    = Color(0xFF4F46E5)
 private val BackgroundColor = Color(0xFFF8FAFC)
-private val SurfaceColor = Color.White
-private val TextPrimary = Color(0xFF1E293B)
-private val TextSecondary = Color(0xFF64748B)
-private val BorderLight = Color(0xFFE2E8F0)
+private val SurfaceColor    = Color.White
+private val TextPrimary     = Color(0xFF1E293B)
+private val TextSecondary   = Color(0xFF64748B)
+private val BorderLight     = Color(0xFFE2E8F0)
+private val CardBg2         = Color(0xFFF1F5F9)
 
+/* ── simple model for people cards ── */
+data class UserPreview(
+    val uid: String  = "",
+    val name: String = "",
+    val role: String = "",
+    val skills: List<String> = emptyList()
+)
 
-/* -------------------- HOME SCREEN -------------------- */
+/* ══════════════════ HOME SCREEN ════════════════════════════════════════════ */
 
 @Composable
 fun HomeScreen(
@@ -50,24 +635,39 @@ fun HomeScreen(
     onProjectClick: (Project) -> Unit,
     onNotificationClick: () -> Unit
 ) {
-
-    var selectedTab by remember { mutableIntStateOf(0) }
-    var showFilters by remember { mutableStateOf(false) }
-
-    val scrollState = rememberScrollState()
+    var selectedTab  by remember { mutableIntStateOf(0) }
+    var showFilters  by remember { mutableStateOf(false) }
+    val scrollState   = rememberScrollState()
 
     val projectViewModel: ProjectViewModel = viewModel()
+    val searchQuery  by projectViewModel.searchQuery.collectAsState()
+    val projects     by projectViewModel.filteredProjects.collectAsState()
+    val userSkills   by projectViewModel.userSkills.collectAsState()
 
-    val searchQuery by projectViewModel.searchQuery.collectAsState()
-    val projects by projectViewModel.filteredProjects.collectAsState()
-    val userSkills by projectViewModel.userSkills.collectAsState()
+    /* people list */
+    val firestore    = FirebaseFirestore.getInstance()
+    val currentUid   = FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
+    var people       by remember { mutableStateOf<List<UserPreview>>(emptyList()) }
 
     LaunchedEffect(Unit) {
         projectViewModel.loadProjects()
-
         val uid = FirebaseAuth.getInstance().currentUser?.uid
-        if (uid != null) {
-            projectViewModel.loadUserSkills(uid)
+        if (uid != null) projectViewModel.loadUserSkills(uid)
+
+        /* load all users except self */
+        firestore.collection("users").get().addOnSuccessListener { snap ->
+            people = snap.documents
+                .filter { it.id != currentUid }
+                .mapNotNull { doc ->
+                    val name = doc.getString("name") ?: return@mapNotNull null
+                    UserPreview(
+                        uid    = doc.id,
+                        name   = name,
+                        role   = doc.getString("role") ?: "",
+                        skills = (doc.get("skills") as? List<*>)
+                            ?.filterIsInstance<String>() ?: emptyList()
+                    )
+                }
         }
     }
 
@@ -76,7 +676,7 @@ fun HomeScreen(
         topBar = { HomeTopBar(onNotificationClick) },
         bottomBar = {
             BottomNavigationBar(
-                selectedTab = selectedTab,
+                selectedTab  = selectedTab,
                 onTabSelected = { tab ->
                     selectedTab = tab
                     when (tab) {
@@ -101,7 +701,7 @@ fun HomeScreen(
             if (showFilters) {
                 FilterBottomSheet(
                     onDismiss = { showFilters = false },
-                    onApply = {
+                    onApply   = {
                         projectViewModel.applyFilters(it)
                         showFilters = false
                     }
@@ -109,7 +709,7 @@ fun HomeScreen(
             }
 
             SearchBarVisual(
-                query = searchQuery,
+                query         = searchQuery,
                 onQueryChange = projectViewModel::onSearchQueryChange,
                 onFilterClick = { showFilters = true }
             )
@@ -117,51 +717,113 @@ fun HomeScreen(
             Spacer(Modifier.height(20.dp))
 
             Text(
-                text = "Build Together.\nGrow Faster.",
-                fontSize = 28.sp,
+                "Build Together.\nGrow Faster.",
+                fontSize   = 28.sp,
                 fontWeight = FontWeight.Bold,
-                color = TextPrimary,
+                color      = TextPrimary,
                 lineHeight = 34.sp
             )
 
             Spacer(Modifier.height(6.dp))
 
             Text(
-                text = "Discover ideas and find collaborators",
+                "Discover ideas and find collaborators",
                 fontSize = 15.sp,
-                color = TextSecondary
+                color    = TextSecondary
             )
 
             Spacer(Modifier.height(20.dp))
 
+            /* ── HAVE AN IDEA CTA ── */
             AddProjectCTA(onAddProjectClick)
 
+            /* ── PEOPLE SECTION ── */
+            if (people.isNotEmpty()) {
+                Spacer(Modifier.height(28.dp))
+
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment     = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "People",
+                        fontSize   = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color      = TextPrimary
+                    )
+                    Text(
+                        "See all",
+                        fontSize = 13.sp,
+                        color    = PrimaryColor,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+
+                Spacer(Modifier.height(12.dp))
+
+                /* horizontal scrolling people cards */
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding        = PaddingValues(end = 4.dp)
+                ) {
+                    items(people) { user ->
+                        PersonCard(
+                            user    = user,
+                            onClick = {
+                                navController.navigate(
+                                    Destinations.profileViewRoute(user.uid)
+                                )
+                            }
+                        )
+                    }
+                }
+            }
+
+            /* ── LATEST PROJECTS ── */
             Spacer(Modifier.height(28.dp))
 
             Text(
-                text = "Latest Projects",
-                fontSize = 20.sp,
+                "Latest Projects",
+                fontSize   = 20.sp,
                 fontWeight = FontWeight.Bold,
-                color = TextPrimary
+                color      = TextPrimary
             )
 
             Spacer(Modifier.height(14.dp))
 
             if (projects.isEmpty()) {
-                Text(
-                    text = "No projects yet. Be the first to post!",
-                    color = TextSecondary
-                )
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .background(SurfaceColor, RoundedCornerShape(14.dp))
+                        .border(1.dp, BorderLight, RoundedCornerShape(14.dp))
+                        .padding(32.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("🚀", fontSize = 32.sp)
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            "No projects yet. Be the first to post!",
+                            color     = TextSecondary,
+                            fontSize  = 14.sp
+                        )
+                    }
+                }
             } else {
                 Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     projects.forEach { project ->
                         CompactProjectCard(
-                            project = project,
+                            project    = project,
                             userSkills = userSkills,
-                            modifier = Modifier
+                            modifier   = Modifier
                                 .fillMaxWidth()
-//                                .clickable { onProjectClick(project) }
-                                .clickable { navController.navigate(Destinations.homeProjectDetailRoute(project.id)) }
+                                .clickable {
+                                    navController.navigate(
+                                        Destinations.homeProjectDetailRoute(project.id)
+                                    )
+                                }
                         )
                     }
                 }
@@ -172,7 +834,96 @@ fun HomeScreen(
     }
 }
 
-/* -------------------- TOP BAR -------------------- */
+/* ══════════════════ PERSON CARD ════════════════════════════════════════════ */
+
+@Composable
+private fun PersonCard(user: UserPreview, onClick: () -> Unit) {
+    Card(
+        modifier  = Modifier
+            .width(150.dp)
+            .clickable { onClick() },
+        shape     = RoundedCornerShape(16.dp),
+        colors    = CardDefaults.cardColors(containerColor = SurfaceColor),
+        border    = androidx.compose.foundation.BorderStroke(1.dp, BorderLight),
+        elevation = CardDefaults.cardElevation(1.dp)
+    ) {
+        Column(
+            Modifier.padding(14.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            /* avatar */
+            Box(
+                Modifier
+                    .size(52.dp)
+                    .clip(CircleShape)
+                    .background(
+                        Brush.linearGradient(
+                            listOf(PrimaryColor.copy(.15f), Color(0xFF818CF8).copy(.15f))
+                        )
+                    )
+                    .border(1.5.dp, PrimaryColor.copy(.25f), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    user.name.firstOrNull()?.uppercase() ?: "?",
+                    fontSize   = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color      = PrimaryColor
+                )
+            }
+
+            /* name */
+            Text(
+                user.name,
+                fontSize   = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                color      = TextPrimary,
+                maxLines   = 1,
+                overflow   = TextOverflow.Ellipsis
+            )
+
+            /* role */
+            if (user.role.isNotBlank()) {
+                Text(
+                    user.role,
+                    fontSize = 12.sp,
+                    color    = TextSecondary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            /* top skill chip */
+            if (user.skills.isNotEmpty()) {
+                Surface(
+                    shape = RoundedCornerShape(20.dp),
+                    color = Color(0xFFEDE9FE)
+                ) {
+                    Text(
+                        user.skills.first(),
+                        fontSize = 11.sp,
+                        color    = PrimaryColor,
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                    )
+                }
+            }
+
+            /* view profile label */
+            Text(
+                "View Profile →",
+                fontSize = 11.sp,
+                color    = PrimaryColor,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+    }
+}
+
+/* ══════════════════ TOP BAR ════════════════════════════════════════════════ */
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -186,7 +937,7 @@ fun HomeTopBar(onNotificationClick: () -> Unit) {
         },
         actions = {
             IconButton(
-                onClick = onNotificationClick,
+                onClick  = onNotificationClick,
                 modifier = Modifier
                     .clip(CircleShape)
                     .background(SurfaceColor)
@@ -201,7 +952,7 @@ fun HomeTopBar(onNotificationClick: () -> Unit) {
     )
 }
 
-/* -------------------- SEARCH -------------------- */
+/* ══════════════════ SEARCH BAR ═════════════════════════════════════════════ */
 
 @Composable
 fun SearchBarVisual(
@@ -209,7 +960,6 @@ fun SearchBarVisual(
     onQueryChange: (String) -> Unit,
     onFilterClick: () -> Unit
 ) {
-
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -220,38 +970,31 @@ fun SearchBarVisual(
             .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-
         Icon(Icons.Default.Search, null, tint = TextSecondary)
-
         Spacer(Modifier.width(12.dp))
-
         TextField(
-            value = query,
+            value         = query,
             onValueChange = onQueryChange,
-            placeholder = {
-                Text(
-                    "Search projects, skills or people",
-                    fontSize = 14.sp,
-                    color = Color(0xFF94A3B8)
-                )
+            placeholder   = {
+                Text("Search projects, skills or people",
+                    fontSize = 14.sp, color = Color(0xFF94A3B8))
             },
             singleLine = true,
-            modifier = Modifier.weight(1f),
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = Color.Transparent,
+            modifier   = Modifier.weight(1f),
+            colors     = TextFieldDefaults.colors(
+                focusedContainerColor   = Color.Transparent,
                 unfocusedContainerColor = Color.Transparent,
-                focusedIndicatorColor = Color.Transparent,
+                focusedIndicatorColor   = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent
             )
         )
-
         IconButton(onClick = onFilterClick) {
             Icon(Icons.Default.Tune, null, tint = TextSecondary)
         }
     }
 }
 
-/* -------------------- FILTER SHEET -------------------- */
+/* ══════════════════ FILTER SHEET ═══════════════════════════════════════════ */
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -259,99 +1002,49 @@ fun FilterBottomSheet(
     onDismiss: () -> Unit,
     onApply: (ProjectFilters) -> Unit
 ) {
-
-    var commitment by remember { mutableStateOf<String?>(null) }
-    var experience by remember { mutableStateOf<String?>(null) }
-    var status by remember { mutableStateOf<String?>(null) }
-
+    var commitment   by remember { mutableStateOf<String?>(null) }
+    var experience   by remember { mutableStateOf<String?>(null) }
+    var status       by remember { mutableStateOf<String?>(null) }
     var selectedSkills by remember { mutableStateOf(setOf<String>()) }
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
-
-        Column(
-            Modifier
-                .padding(20.dp)
-                .verticalScroll(rememberScrollState())
-        ) {
-
+        Column(Modifier.padding(20.dp).verticalScroll(rememberScrollState())) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment     = Alignment.CenterVertically
             ) {
-
                 Text("Filters", fontWeight = FontWeight.Bold, fontSize = 20.sp)
-
-                TextButton(
-                    onClick = {
-
-                        commitment = null
-                        experience = null
-                        status = null
-                        selectedSkills = emptySet()
-
-                        onApply(
-                            ProjectFilters(
-                                commitmentLevel = null,
-                                experienceLevel = null,
-                                status = null,
-                                skills = emptyList()
-                            )
-                        )
-
-                        onDismiss()
-                    }
-                ) {
-                    Text("Clear All")
-                }
+                TextButton(onClick = {
+                    commitment = null; experience = null; status = null
+                    selectedSkills = emptySet()
+                    onApply(ProjectFilters()); onDismiss()
+                }) { Text("Clear All") }
             }
-
             Spacer(Modifier.height(20.dp))
-
-            ChipGroupSingle(
-                "Commitment Level",
-                listOf("Low", "Medium", "High")
-            ) { commitment = it }
-
-            ChipGroupSingle(
-                "Experience Level",
-                listOf("Beginner", "Intermediate", "Advanced")
-            ) { experience = it }
-
-            ChipGroupMulti(
-                "Skills",
-                listOf("Kotlin", "Firebase", "UI/UX", "React", "ML", "Flutter")
-            ) { selectedSkills = it }
-
-            ChipGroupSingle(
-                "Status",
-                listOf("YET_TO_START", "IN_PROGRESS", "COMPLETED")
-            ) { status = it }
-
+            ChipGroupSingle("Commitment Level", listOf("Low","Medium","High")) { commitment = it }
+            ChipGroupSingle("Experience Level", listOf("Beginner","Intermediate","Advanced")) { experience = it }
+            ChipGroupMulti("Skills", listOf("Kotlin","Firebase","UI/UX","React","ML","Flutter")) { selectedSkills = it }
+            ChipGroupSingle("Status", listOf("YET_TO_START","IN_PROGRESS","COMPLETED")) { status = it }
             Spacer(Modifier.height(24.dp))
-
             Button(
                 onClick = {
-                    onApply(
-                        ProjectFilters(
-                            commitmentLevel = commitment,
-                            experienceLevel = experience,
-                            status = status,
-                            skills = selectedSkills.toList()
-                        )
-                    )
+                    onApply(ProjectFilters(
+                        commitmentLevel = commitment,
+                        experienceLevel = experience,
+                        status          = status,
+                        skills          = selectedSkills.toList()
+                    ))
                 },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Apply Filters")
-            }
-
+                modifier = Modifier.fillMaxWidth(),
+                shape    = RoundedCornerShape(12.dp)
+            ) { Text("Apply Filters") }
             Spacer(Modifier.height(30.dp))
         }
     }
 }
 
-/* -------------------- CHIP GROUP (SINGLE SELECT) -------------------- */
+/* ══════════════════ CHIP GROUPS ════════════════════════════════════════════ */
 
 @Composable
 fun ChipGroupSingle(
@@ -359,25 +1052,18 @@ fun ChipGroupSingle(
     options: List<String>,
     onSelected: (String?) -> Unit
 ) {
-
     var selected by remember { mutableStateOf<String?>(null) }
-
     Column {
-
         Text(title, fontWeight = FontWeight.SemiBold)
-
         Spacer(Modifier.height(8.dp))
-
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement   = Arrangement.spacedBy(8.dp)
         ) {
-
             options.forEach { option ->
-
                 FilterChip(
                     selected = selected == option,
-                    onClick = {
+                    onClick  = {
                         selected = if (selected == option) null else option
                         onSelected(selected)
                     },
@@ -385,12 +1071,9 @@ fun ChipGroupSingle(
                 )
             }
         }
-
         Spacer(Modifier.height(16.dp))
     }
 }
-
-/* -------------------- CHIP GROUP (MULTI SELECT) -------------------- */
 
 @Composable
 fun ChipGroupMulti(
@@ -398,128 +1081,84 @@ fun ChipGroupMulti(
     options: List<String>,
     onSelectionChanged: (Set<String>) -> Unit
 ) {
-
     var selectedItems by remember { mutableStateOf(setOf<String>()) }
-
     Column {
-
         Text(title, fontWeight = FontWeight.SemiBold)
-
         Spacer(Modifier.height(8.dp))
-
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement   = Arrangement.spacedBy(8.dp)
         ) {
-
             options.forEach { option ->
-
-                val selected = selectedItems.contains(option)
-
+                val sel = selectedItems.contains(option)
                 FilterChip(
-                    selected = selected,
-                    onClick = {
-
-                        selectedItems = if (selected) {
-                            selectedItems - option
-                        } else {
-                            selectedItems + option
-                        }
-
+                    selected = sel,
+                    onClick  = {
+                        selectedItems = if (sel) selectedItems - option else selectedItems + option
                         onSelectionChanged(selectedItems)
                     },
                     label = { Text(option) }
                 )
             }
         }
-
         Spacer(Modifier.height(16.dp))
     }
 }
 
-fun calculateSkillMatch(
-    userSkills: List<String>,
-    projectSkills: List<String>
-): Int {
-
+fun calculateSkillMatch(userSkills: List<String>, projectSkills: List<String>): Int {
     if (projectSkills.isEmpty()) return 0
-
-    val matchCount = projectSkills.count { projectSkill ->
-        userSkills.any { userSkill ->
-            userSkill.equals(projectSkill, ignoreCase = true)
-        }
+    val matchCount = projectSkills.count { ps ->
+        userSkills.any { us -> us.equals(ps, ignoreCase = true) }
     }
-
     return ((matchCount.toFloat() / projectSkills.size) * 100).toInt()
 }
 
-
-/* -------------------- CTA -------------------- */
+/* ══════════════════ CTA ════════════════════════════════════════════════════ */
 
 @Composable
 fun AddProjectCTA(onAddProjectClick: () -> Unit) {
-
     Card(
-        shape = RoundedCornerShape(18.dp),
+        shape  = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = PrimaryColor),
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onAddProjectClick() }
+        modifier = Modifier.fillMaxWidth().clickable { onAddProjectClick() }
     ) {
-
-        Row(
-            modifier = Modifier.padding(18.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-
+        Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text("Have an idea?", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                Text("Post a project & find collaborators", fontSize = 14.sp, color = Color.White.copy(alpha = 0.9f))
+                Text("Post a project & find collaborators", fontSize = 14.sp,
+                    color = Color.White.copy(alpha = 0.9f))
             }
-
             Icon(Icons.Default.Add, null, tint = Color.White, modifier = Modifier.size(26.dp))
         }
     }
 }
 
-/* -------------------- PROJECT CARD -------------------- */
+/* ══════════════════ COMPACT PROJECT CARD ═══════════════════════════════════ */
 
 @Composable
-fun CompactProjectCard(
-    project: Project,
-    modifier: Modifier = Modifier
-) {
-
+fun CompactProjectCard(project: Project, modifier: Modifier = Modifier) {
     Card(
-        shape = RoundedCornerShape(14.dp),
+        shape  = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = SurfaceColor),
         modifier = modifier.height(100.dp)
     ) {
-
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-
+        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-
                 Text(project.title, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-
                 Spacer(Modifier.height(4.dp))
-
                 Text("by ${project.ownerName}", color = TextSecondary, fontSize = 12.sp)
             }
         }
     }
 }
 
-/* -------------------- NAV COLORS -------------------- */
+/* ══════════════════ NAV BAR ════════════════════════════════════════════════ */
 
 @Composable
 fun navColors() = NavigationBarItemDefaults.colors(
-    selectedIconColor = PrimaryColor,
+    selectedIconColor   = PrimaryColor,
     unselectedIconColor = Color(0xFF94A3B8),
-    indicatorColor = Color.Transparent
+    indicatorColor      = Color.Transparent
 )
 
 @Composable
@@ -528,44 +1167,16 @@ fun BottomNavigationBar(
     onTabSelected: (Int) -> Unit,
     onAddClick: () -> Unit
 ) {
-
-    NavigationBar(
-        containerColor = SurfaceColor
-    ) {
-
-        NavigationBarItem(
-            selected = selectedTab == 0,
-            onClick = { onTabSelected(0) },
-            icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
-            colors = navColors()
-        )
-
-        NavigationBarItem(
-            selected = selectedTab == 1,
-            onClick = { onTabSelected(1) },
-            icon = { Icon(Icons.Default.List, contentDescription = "Projects") },
-            colors = navColors()
-        )
-
-        NavigationBarItem(
-            selected = false,
-            onClick = onAddClick,
-            icon = { Icon(Icons.Default.AddCircle, contentDescription = "Add") },
-            colors = navColors()
-        )
-
-        NavigationBarItem(
-            selected = selectedTab == 3,
-            onClick = { onTabSelected(3) },
-            icon = { Icon(Icons.Default.Email, contentDescription = "Messages") },
-            colors = navColors()
-        )
-
-        NavigationBarItem(
-            selected = selectedTab == 4,
-            onClick = { onTabSelected(4) },
-            icon = { Icon(Icons.Default.Person, contentDescription = "Profile") },
-            colors = navColors()
-        )
+    NavigationBar(containerColor = SurfaceColor) {
+        NavigationBarItem(selectedTab == 0, { onTabSelected(0) },
+            icon = { Icon(Icons.Default.Home, "Home") }, colors = navColors())
+        NavigationBarItem(selectedTab == 1, { onTabSelected(1) },
+            icon = { Icon(Icons.Default.List, "Projects") }, colors = navColors())
+        NavigationBarItem(false, onAddClick,
+            icon = { Icon(Icons.Default.AddCircle, "Add") }, colors = navColors())
+        NavigationBarItem(selectedTab == 3, { onTabSelected(3) },
+            icon = { Icon(Icons.Default.Email, "Messages") }, colors = navColors())
+        NavigationBarItem(selectedTab == 4, { onTabSelected(4) },
+            icon = { Icon(Icons.Default.Person, "Profile") }, colors = navColors())
     }
 }
