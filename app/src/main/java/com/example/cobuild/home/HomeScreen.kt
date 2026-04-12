@@ -754,9 +754,12 @@ fun HomeScreen(
                     )
                     Text(
                         "See all",
-                        fontSize = 13.sp,
-                        color    = PrimaryColor,
-                        fontWeight = FontWeight.SemiBold
+                        fontSize   = 13.sp,
+                        color      = PrimaryColor,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier   = Modifier.clickable {
+                            navController.navigate(Destinations.PEOPLE_LIST)
+                        }
                     )
                 }
 

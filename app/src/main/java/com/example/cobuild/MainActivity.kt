@@ -350,6 +350,7 @@ import com.example.cobuild.ui.theme.CoBuildTheme
 import com.example.cobuild.data.model.Project
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.example.cobuild.ui.people.PeopleListScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -514,6 +515,16 @@ fun MainApp() {
             ChatListScreen(
                 navController = navController,
                 onBackClick   = { navController.popBackStack() }
+            )
+        }
+
+
+        composable(Destinations.PEOPLE_LIST) {
+            PeopleListScreen(
+                onBackClick   = { navController.popBackStack() },
+                onPersonClick = { uid ->
+                    navController.navigate(Destinations.profileViewRoute(uid))
+                }
             )
         }
 

@@ -46,7 +46,7 @@ object Destinations {
         return "home_project_detail/$projectId"
     }
 
-
+    const val PEOPLE_LIST = "people_list"
 
     const val GROUP_CHAT_ROUTE = "group_chat/{projectId}/{projectTitle}"
     fun groupChatRoute(projectId: String, title: String) = "group_chat/$projectId/${Uri.encode(title)}"
