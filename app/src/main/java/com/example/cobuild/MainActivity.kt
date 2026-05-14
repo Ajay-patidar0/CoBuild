@@ -351,19 +351,51 @@ import com.example.cobuild.data.model.Project
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.example.cobuild.ui.people.PeopleListScreen
+import com.google.firebase.messaging.FirebaseMessaging
+import android.Manifest
+import android.os.Build
+import androidx.activity.result.contract.ActivityResultContracts
 
 class MainActivity : ComponentActivity() {
+    //    override fun onCreate(savedInstanceState: Bundle?) {
+//        super.onCreate(savedInstanceState)
+//        enableEdgeToEdge()
+//        setContent {
+//            CoBuildTheme { MainApp() }
+//        }
+//    }
+//}
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        // Save FCM token when app opens
+        val uid = FirebaseAuth.getInstance().currentUser?.uid
+        if (uid != null) {
+            FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
+                FirebaseFirestore.getInstance()
+                    .collection("users")
+                    .document(uid)
+                    .update("fcmToken", token)
+            }
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerForActivityResult(
+                ActivityResultContracts.RequestPermission()
+            ) { /* you can handle granted/denied here if needed */ }
+                .launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+        // Check if app was opened by tapping a push notification
+        val screen = intent?.getStringExtra("screen")
+
         setContent {
-            CoBuildTheme { MainApp() }
+            CoBuildTheme { MainApp(openScreen = screen) }
         }
     }
 }
-
 @Composable
-fun MainApp() {
+fun MainApp(openScreen: String? = null) {
 
     val navController  = rememberNavController()
     val auth           = FirebaseAuth.getInstance()
@@ -374,6 +406,24 @@ fun MainApp() {
     var requesterName    by remember { mutableStateOf("") }
 
     /* ── session check ── */
+//    LaunchedEffect(Unit) {
+//        if (currentUser == null) {
+//            startDestination = Destinations.LOGIN
+//        } else {
+//            firestore.collection("users").document(currentUser.uid).get()
+//                .addOnSuccessListener { doc ->
+//                    if (doc.exists()) {
+//                        requesterName    = doc.getString("name") ?: "User"
+//                        startDestination = Destinations.HOME
+//                    } else {
+//                        startDestination = Destinations.ONBOARDING
+//                    }
+//                }
+//                .addOnFailureListener {
+//                    startDestination = Destinations.ONBOARDING
+//                }
+//        }
+//    }
     LaunchedEffect(Unit) {
         if (currentUser == null) {
             startDestination = Destinations.LOGIN
@@ -393,6 +443,12 @@ fun MainApp() {
         }
     }
 
+// If app opened from push notification tap → navigate to notifications
+    LaunchedEffect(openScreen) {
+        if (openScreen == "notifications" && currentUser != null) {
+            navController.navigate(Destinations.NOTIFICATIONS)
+        }
+    }
     NavHost(navController = navController, startDestination = startDestination) {
 
         /* ── AUTH ── */

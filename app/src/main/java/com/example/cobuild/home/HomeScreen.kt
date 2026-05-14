@@ -602,6 +602,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.cobuild.data.model.Project
 import com.example.cobuild.navigation.Destinations
+import com.example.cobuild.ui.notification.NotificationViewModel
 import com.example.cobuild.ui.project.CompactProjectCard
 import com.example.cobuild.ui.project.ProjectViewModel
 import com.google.firebase.auth.FirebaseAuth
@@ -641,19 +642,30 @@ fun HomeScreen(
 
     val projectViewModel: ProjectViewModel = viewModel()
     val searchQuery  by projectViewModel.searchQuery.collectAsState()
-    val projects     by projectViewModel.filteredProjects.collectAsState()
+//    val projects     by projectViewModel.filteredProjects.collectAsState()
+    val projects       by projectViewModel.sortedProjects.collectAsState()
+    val recommendedIds by projectViewModel.recommendedProjectIds.collectAsState()
     val userSkills   by projectViewModel.userSkills.collectAsState()
 
     /* people list */
     val firestore    = FirebaseFirestore.getInstance()
     val currentUid   = FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
     var people       by remember { mutableStateOf<List<UserPreview>>(emptyList()) }
+    val notificationViewModel: NotificationViewModel = viewModel()
+    val unreadCount by notificationViewModel.unreadCount.collectAsState()
+
+//    LaunchedEffect(Unit) {
+//        projectViewModel.loadProjects()
+//        val uid = FirebaseAuth.getInstance().currentUser?.uid
+//        if (uid != null) projectViewModel.loadUserSkills(uid)
 
     LaunchedEffect(Unit) {
-        projectViewModel.loadProjects()
         val uid = FirebaseAuth.getInstance().currentUser?.uid
-        if (uid != null) projectViewModel.loadUserSkills(uid)
-
+        if (uid != null) {
+            projectViewModel.loadUserSkills(uid)
+            projectViewModel.loadRecommendedProjects(uid)  // load scores FIRST
+        }
+        projectViewModel.loadProjects()  // then load projects
         /* load all users except self */
         firestore.collection("users").get().addOnSuccessListener { snap ->
             people = snap.documents
@@ -673,7 +685,8 @@ fun HomeScreen(
 
     Scaffold(
         containerColor = BackgroundColor,
-        topBar = { HomeTopBar(onNotificationClick) },
+//        topBar = { HomeTopBar(onNotificationClick) },
+        topBar = { HomeTopBar(onNotificationClick, unreadCount) },
         bottomBar = {
             BottomNavigationBar(
                 selectedTab  = selectedTab,
@@ -815,19 +828,161 @@ fun HomeScreen(
                     }
                 }
             } else {
+                // Split into two separate lists
+                val recommendedProjects = projects.filter { recommendedIds.containsKey(it.id) }
+                val otherProjects       = projects.filter { !recommendedIds.containsKey(it.id) }
+
                 Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    projects.forEach { project ->
-                        CompactProjectCard(
-                            project    = project,
-                            userSkills = userSkills,
-                            modifier   = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    navController.navigate(
-                                        Destinations.homeProjectDetailRoute(project.id)
-                                    )
+
+                    // ── RECOMMENDED SECTION ──────────────────────────────
+                    if (recommendedProjects.isNotEmpty()) {
+
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            verticalAlignment     = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                "⭐ Recommended for you",
+                                fontSize   = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color      = TextPrimary
+                            )
+                            Surface(
+                                shape = RoundedCornerShape(20.dp),
+                                color = Color(0xFFEDE9FE)
+                            ) {
+                                Text(
+                                    "${recommendedProjects.size} matches",
+                                    fontSize   = 11.sp,
+                                    color      = PrimaryColor,
+                                    fontWeight = FontWeight.Medium,
+                                    modifier   = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                )
+                            }
+                        }
+
+                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            recommendedProjects.forEach { project ->
+                                val aiScore: Double? = recommendedIds[project.id]
+
+                                Card(
+                                    shape     = RoundedCornerShape(14.dp),
+                                    colors    = CardDefaults.cardColors(containerColor = SurfaceColor),
+                                    border    = androidx.compose.foundation.BorderStroke(
+                                        1.5.dp, PrimaryColor.copy(alpha = 0.3f)
+                                    ),
+                                    modifier  = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            navController.navigate(
+                                                Destinations.homeProjectDetailRoute(project.id)
+                                            )
+                                        }
+                                ) {
+                                    Column(Modifier.padding(14.dp)) {
+                                        Row(
+                                            Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment     = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                project.title,
+                                                fontSize   = 15.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color      = TextPrimary,
+                                                modifier   = Modifier.weight(1f)
+                                            )
+                                            if (aiScore != null) {
+                                                Surface(
+                                                    shape = RoundedCornerShape(20.dp),
+                                                    color = PrimaryColor
+                                                ) {
+                                                    Text(
+                                                        "${aiScore.toInt()}% match",
+                                                        fontSize   = 11.sp,
+                                                        color      = Color.White,
+                                                        fontWeight = FontWeight.Bold,
+                                                        modifier   = Modifier.padding(
+                                                            horizontal = 10.dp, vertical = 4.dp
+                                                        )
+                                                    )
+                                                }
+                                            }
+                                        }
+                                        Spacer(Modifier.height(4.dp))
+                                        Text(
+                                            "by ${project.ownerName}",
+                                            fontSize = 12.sp,
+                                            color    = TextSecondary
+                                        )
+                                        if (project.skills.isNotEmpty()) {
+                                            Spacer(Modifier.height(8.dp))
+                                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                                project.skills.take(3).forEach { skill ->
+                                                    Surface(
+                                                        shape = RoundedCornerShape(20.dp),
+                                                        color = Color(0xFFF1F5F9)
+                                                    ) {
+                                                        Text(
+                                                            skill,
+                                                            fontSize = 11.sp,
+                                                            color    = TextSecondary,
+                                                            modifier = Modifier.padding(
+                                                                horizontal = 8.dp, vertical = 3.dp
+                                                            )
+                                                        )
+                                                    }
+                                                }
+                                                if (project.skills.size > 3) {
+                                                    Text(
+                                                        "+${project.skills.size - 3} more",
+                                                        fontSize = 11.sp,
+                                                        color    = TextSecondary
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
+                            }
+                        }
+                    }
+
+                    // ── DIVIDER between sections ─────────────────────────
+                    if (recommendedProjects.isNotEmpty() && otherProjects.isNotEmpty()) {
+                        HorizontalDivider(
+                            color     = BorderLight,
+                            thickness = 1.dp,
+                            modifier  = Modifier.padding(vertical = 4.dp)
                         )
+                    }
+
+                    // ── ALL OTHER PROJECTS SECTION ───────────────────────
+                    if (otherProjects.isNotEmpty()) {
+
+                        Text(
+                            if (recommendedProjects.isEmpty()) "Latest Projects" else "Other Projects",
+                            fontSize   = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color      = TextPrimary
+                        )
+
+                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            otherProjects.forEach { project ->
+                                CompactProjectCard(
+                                    project    = project,
+                                    userSkills = userSkills,
+                                    modifier   = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            navController.navigate(
+                                                Destinations.homeProjectDetailRoute(project.id)
+                                            )
+                                        }
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -928,9 +1083,12 @@ private fun PersonCard(user: UserPreview, onClick: () -> Unit) {
 
 /* ══════════════════ TOP BAR ════════════════════════════════════════════════ */
 
+//@OptIn(ExperimentalMaterial3Api::class)
+//@Composable
+//fun HomeTopBar(onNotificationClick: () -> Unit) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeTopBar(onNotificationClick: () -> Unit) {
+fun HomeTopBar(onNotificationClick: () -> Unit, unreadCount: Int = 0) {
     TopAppBar(
         title = {
             Column {
@@ -939,15 +1097,39 @@ fun HomeTopBar(onNotificationClick: () -> Unit) {
             }
         },
         actions = {
-            IconButton(
-                onClick  = onNotificationClick,
-                modifier = Modifier
-                    .clip(CircleShape)
-                    .background(SurfaceColor)
-                    .border(1.dp, BorderLight, CircleShape)
-                    .size(42.dp)
+//            IconButton(
+//                onClick  = onNotificationClick,
+//                modifier = Modifier
+//                    .clip(CircleShape)
+//                    .background(SurfaceColor)
+//                    .border(1.dp, BorderLight, CircleShape)
+//                    .size(42.dp)
+//            ) {
+//                Icon(Icons.Outlined.Notifications, null, tint = TextPrimary)
+//            }
+            BadgedBox(
+                badge = {
+                    if (unreadCount > 0) {
+                        Badge(containerColor = Color.Red) {
+                            Text(
+                                if (unreadCount > 9) "9+" else unreadCount.toString(),
+                                color    = Color.White,
+                                fontSize = 9.sp
+                            )
+                        }
+                    }
+                }
             ) {
-                Icon(Icons.Outlined.Notifications, null, tint = TextPrimary)
+                IconButton(
+                    onClick  = onNotificationClick,
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(SurfaceColor)
+                        .border(1.dp, BorderLight, CircleShape)
+                        .size(42.dp)
+                ) {
+                    Icon(Icons.Outlined.Notifications, null, tint = TextPrimary)
+                }
             }
             Spacer(Modifier.width(12.dp))
         },
@@ -1136,24 +1318,24 @@ fun AddProjectCTA(onAddProjectClick: () -> Unit) {
     }
 }
 
-/* ══════════════════ COMPACT PROJECT CARD ═══════════════════════════════════ */
-
-@Composable
-fun CompactProjectCard(project: Project, modifier: Modifier = Modifier) {
-    Card(
-        shape  = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = SurfaceColor),
-        modifier = modifier.height(100.dp)
-    ) {
-        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text(project.title, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                Spacer(Modifier.height(4.dp))
-                Text("by ${project.ownerName}", color = TextSecondary, fontSize = 12.sp)
-            }
-        }
-    }
-}
+///* ══════════════════ COMPACT PROJECT CARD ═══════════════════════════════════ */
+//
+//@Composable
+//fun CompactProjectCard(project: Project, modifier: Modifier = Modifier) {
+//    Card(
+//        shape  = RoundedCornerShape(14.dp),
+//        colors = CardDefaults.cardColors(containerColor = SurfaceColor),
+//        modifier = modifier.height(100.dp)
+//    ) {
+//        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+//            Column(Modifier.weight(1f)) {
+//                Text(project.title, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+//                Spacer(Modifier.height(4.dp))
+//                Text("by ${project.ownerName}", color = TextSecondary, fontSize = 12.sp)
+//            }
+//        }
+//    }
+//}
 
 /* ══════════════════ NAV BAR ════════════════════════════════════════════════ */
 

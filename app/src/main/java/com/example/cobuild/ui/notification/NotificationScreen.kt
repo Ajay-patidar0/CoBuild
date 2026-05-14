@@ -392,8 +392,14 @@ fun NotificationCard(
                             )
                         }
                     }
+//                    Text(
+//                        "wants to join your project",
+//                        fontSize = 13.sp,
+//                        color    = TextSub
+//                    )
                     Text(
-                        "wants to join your project",
+                        if (notification.isInvite) "invited you to join their project"
+                        else "wants to join your project",
                         fontSize = 13.sp,
                         color    = TextSub
                     )

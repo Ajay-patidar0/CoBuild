@@ -145,6 +145,8 @@ import com.example.cobuild.ui.project.components.MembersBottomSheet
 import com.example.cobuild.ui.project.components.ProjectCard
 import com.example.cobuild.ui.project.components.ProjectTabSwitcher
 import com.google.firebase.auth.FirebaseAuth
+import com.example.cobuild.ui.project.components.TopMatch
+import com.google.firebase.firestore.FirebaseFirestore
 
 /* ---------- THEME COLORS ---------- */
 private val BackgroundColor = Color(0xFFF8FAFC)
@@ -174,6 +176,26 @@ fun ProjectListScreen(
     val joinedProjects by viewModel.joinedProjects.collectAsState()
     val postedProjects by viewModel.postedProjects.collectAsState()
 
+    // top_matches per project — only needed for posted tab
+    var topMatchesMap by remember { mutableStateOf<Map<String, List<TopMatch>>>(emptyMap()) }
+
+    LaunchedEffect(postedProjects) {
+        val map = mutableMapOf<String, List<TopMatch>>()
+        postedProjects.forEach { project ->
+            FirebaseFirestore.getInstance()
+                .collection("projects").document(project.id)
+                .get().addOnSuccessListener { doc ->
+                    val raw = doc.get("top_matches") as? List<Map<String, Any>> ?: emptyList()
+                    map[project.id] = raw.map { m ->
+                        TopMatch(
+                            userId = m["user_id"] as? String ?: "",
+                            score  = (m["score"] as? Double) ?: 0.0
+                        )
+                    }
+                    topMatchesMap = map.toMap()
+                }
+        }
+    }
     val projects = if (selectedTab == 0) joinedProjects else postedProjects
 
     Scaffold(
@@ -251,26 +273,38 @@ fun ProjectListScreen(
 
                         val isPostedProject = selectedTab == 1
 
+//                        ProjectCard(
+//                            project = project,
+//
+//                            // Card click → open project details
+//                            onClick = {
+//                                onProjectClick(project.id)
+//                            },
+//
+//                            onMembersClick = { members ->
+//                                selectedMembers = members
+//                                showMembers = true
+//                            },
+//
+//                            // Edit icon only for posted projects
+//                            canEdit = isPostedProject,
+//
+//                            // Edit icon click → open edit screen
+//                            onEditClick = {
+//                                onEditProject(project.id)
+//                            }
+//                        )
                         ProjectCard(
-                            project = project,
-
-                            // Card click → open project details
-                            onClick = {
-                                onProjectClick(project.id)
-                            },
-
+                            project      = project,
+                            onClick      = { onProjectClick(project.id) },
                             onMembersClick = { members ->
                                 selectedMembers = members
                                 showMembers = true
                             },
-
-                            // Edit icon only for posted projects
-                            canEdit = isPostedProject,
-
-                            // Edit icon click → open edit screen
-                            onEditClick = {
-                                onEditProject(project.id)
-                            }
+                            canEdit      = isPostedProject,
+                            onEditClick  = { onEditProject(project.id) },
+                            topMatches   = if (isPostedProject) topMatchesMap[project.id] ?: emptyList() else emptyList(),
+                            ownerId      = userId ?: ""
                         )
                     }
                 }

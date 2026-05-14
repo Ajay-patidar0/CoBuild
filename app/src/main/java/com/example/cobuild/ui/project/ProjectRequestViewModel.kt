@@ -81,4 +81,36 @@ class ProjectRequestViewModel : ViewModel() {
             _isRequested.value = hasRequested(projectId, userId)
         }
     }
+
+    // Owner invites a matched user to join their project
+    fun inviteUser(
+        projectId: String,
+        projectTitle: String,
+        targetUserId: String,
+        targetUserName: String,
+        ownerId: String
+    ) {
+        viewModelScope.launch {
+            // Check if invite already sent
+            val existing = firestore.collection("project_requests")
+                .whereEqualTo("projectId", projectId)
+                .whereEqualTo("requesterId", targetUserId)
+                .get().await()
+
+            if (!existing.isEmpty) return@launch  // already requested or invited
+
+            val docRef = firestore.collection("project_requests").document()
+            docRef.set(mapOf(
+                "requestId"     to docRef.id,
+                "projectId"     to projectId,
+                "projectTitle"  to projectTitle,
+                "ownerId"       to ownerId,
+                "requesterId"   to targetUserId,
+                "requesterName" to targetUserName,
+                "status"        to "invited",       // ← different from "pending"
+                "isInvite"      to true,            // ← owner sent this
+                "createdAt"     to Timestamp.now()
+            )).await()
+        }
+    }
 }

@@ -67,6 +67,7 @@ dependencies {
 
     implementation("androidx.navigation:navigation-compose:2.9.6")
     implementation(libs.firebase.firestore)
+    implementation(libs.firebase.messaging)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

@@ -415,7 +415,10 @@ class ProjectViewModel : ViewModel() {
 
     private val _filters = MutableStateFlow(ProjectFilters())
     val filters = _filters.asStateFlow()
-
+    // Add these state flows
+//    private val _recommendedProjectIds = MutableStateFlow<Map<String, Double>>(emptyMap())
+    private val _recommendedProjectIds = MutableStateFlow<Map<String, Double>>(emptyMap())
+    val recommendedProjectIds: StateFlow<Map<String, Double>> = _recommendedProjectIds.asStateFlow()
     private val _userSkills = MutableStateFlow<List<String>>(emptyList())
     val userSkills = _userSkills.asStateFlow()
 
@@ -475,6 +478,42 @@ class ProjectViewModel : ViewModel() {
         started      = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
     )
+
+    // ── SORTED PROJECTS (recommended first) ──────────────────────────────────
+    val sortedProjects: StateFlow<List<Project>> = combine(
+        _projects, _recommendedProjectIds
+    ) { all, recMap ->
+        val validIds = all.map { it.id }.toSet()
+        val cleanMap = recMap.filter { validIds.contains(it.key) }
+
+        val recommended = all
+            .filter  { cleanMap.containsKey(it.id) }
+            .sortedByDescending { cleanMap[it.id] }   // ← highest AI score first
+
+        val rest = all.filter { !cleanMap.containsKey(it.id) }
+
+        recommended + rest
+    }.stateIn(
+        scope        = viewModelScope,
+        started      = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
+    fun loadRecommendedProjects(uid: String) {
+        FirebaseFirestore.getInstance()
+            .collection("users").document(uid)
+            .collection("recommended_projects")
+            .get()
+            .addOnSuccessListener { snap ->
+                val map = snap.documents.associate { doc ->
+                    val pid   = doc.getString("project_id") ?: doc.id
+                    val score = doc.getDouble("score") ?: 0.0
+                    pid to score
+                }
+                _recommendedProjectIds.value = map
+            }
+    }
+
 
     /* ── SEARCH & FILTERS ────────────────────────────────────────────────── */
 

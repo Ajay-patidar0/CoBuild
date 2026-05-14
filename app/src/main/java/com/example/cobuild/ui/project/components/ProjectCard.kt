@@ -176,7 +176,9 @@ fun ProjectCard(
     onClick: () -> Unit,
     onMembersClick: (List<String>) -> Unit,
     canEdit: Boolean = false,
-    onEditClick: (() -> Unit)? = null
+    onEditClick: (() -> Unit)? = null,
+    topMatches: List<TopMatch> = emptyList(),   // ← ADD
+    ownerId: String = ""                         // ← ADD
 ) {
 
     Card(
@@ -319,6 +321,15 @@ fun ProjectCard(
                 )
             }
         }
+    }
+    // Show AI matches only for owner on posted projects
+    if (canEdit && topMatches.isNotEmpty()) {
+        TopMatchesSection(
+            projectId    = project.id,
+            projectTitle = project.title,
+            ownerId      = ownerId,
+            topMatches   = topMatches
+        )
     }
 }
 

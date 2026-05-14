@@ -51,4 +51,42 @@ class NotificationRepository {
 
         awaitClose { listener.remove() }
     }
+    fun observeInvitesForUser(userId: String): Flow<List<AppNotification>> = callbackFlow {
+
+        val listener = firestore.collection("project_requests")
+            .whereEqualTo("requesterId", userId)
+            .whereEqualTo("isInvite", true)
+            .whereEqualTo("status", "invited")
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    Log.e("NotificationRepo", "Error fetching invites: ${error.message}")
+                    trySend(emptyList())
+                    return@addSnapshotListener
+                }
+
+                if (snapshot != null) {
+                    val list = snapshot.documents.map { doc ->
+                        AppNotification(
+                            id            = doc.getString("requestId") ?: doc.id,
+                            userId        = doc.getString("ownerId")      ?: "",
+                            type          = "invite",
+                            requesterId   = doc.getString("ownerId")      ?: "",
+                            requesterName = doc.getString("ownerName")    ?: "Project Owner",
+                            projectId     = doc.getString("projectId")    ?: "",
+                            projectTitle  = doc.getString("projectTitle") ?: "",
+                            isRead        = false,
+                            isInvite      = true,
+                            createdAt     = (doc.get("createdAt") as? Timestamp)?.toDate()?.time
+                                ?: System.currentTimeMillis()
+                        )
+                    }
+                    Log.d("NotificationRepo", "Fetched ${list.size} invites")
+                    trySend(list)
+                } else {
+                    trySend(emptyList())
+                }
+            }
+
+        awaitClose { listener.remove() }
+    }
 }

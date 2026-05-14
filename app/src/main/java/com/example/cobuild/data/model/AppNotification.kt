@@ -9,5 +9,6 @@ data class AppNotification(
     val requesterId: String = "",
     val requesterName: String = "",
     val isRead: Boolean = false,
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    val isInvite      : Boolean = false
 )

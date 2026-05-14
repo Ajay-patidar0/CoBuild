@@ -131,53 +131,112 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-
+import kotlinx.coroutines.flow.combine
 class NotificationViewModel : ViewModel() {
 
     private val repository = NotificationRepository()
     private val firestore  = FirebaseFirestore.getInstance()
 
-    private val _notifications = MutableStateFlow<List<AppNotification>>(emptyList())
+//    private val _notifications = MutableStateFlow<List<AppNotification>>(emptyList())
+//    val notifications: StateFlow<List<AppNotification>> = _notifications
+private val _notifications = MutableStateFlow<List<AppNotification>>(emptyList())
     val notifications: StateFlow<List<AppNotification>> = _notifications
 
+    private val _unreadCount = MutableStateFlow(0)
+    val unreadCount: StateFlow<Int> = _unreadCount.asStateFlow()
+
+//    init {
+//        FirebaseAuth.getInstance().currentUser?.uid?.let { ownerId ->
+//            repository.observeJoinRequestsForOwner(ownerId)
+//                .onEach { _notifications.value = it }
+//                .launchIn(viewModelScope)
+//        }
+//    }
+
     init {
-        FirebaseAuth.getInstance().currentUser?.uid?.let { ownerId ->
-            repository.observeJoinRequestsForOwner(ownerId)
+        FirebaseAuth.getInstance().currentUser?.uid?.let { uid ->
+
+//            // Existing: join requests where YOU are the owner
+//            repository.observeJoinRequestsForOwner(uid)
+//                .onEach { _notifications.value = it }
+//                .launchIn(viewModelScope)
+            combine(
+                repository.observeJoinRequestsForOwner(uid),
+                repository.observeInvitesForUser(uid)
+            ) { joins, invites -> joins + invites }
                 .onEach { _notifications.value = it }
                 .launchIn(viewModelScope)
+
+            // New: AI match notifications from recommended_projects scoring
+            firestore.collection("users").document(uid)
+                .collection("notifications")
+                .whereEqualTo("read", false)
+                .addSnapshotListener { snap, _ ->
+                    val aiUnread   = snap?.size() ?: 0
+                    val joinUnread = _notifications.value.count { !it.isRead }
+                    _unreadCount.value = aiUnread + joinUnread
+                }
         }
     }
 
     /* ── ACCEPT ── */
+//    fun acceptRequest(notification: AppNotification) {
+//        val batch = firestore.batch()
+//
+//        /* 1. mark request accepted */
+//        batch.update(
+//            firestore.collection("project_requests").document(notification.id),
+//            "status", "accepted"
+//        )
+//
+//        /* 2. add user to project members + flip status to IN_PROGRESS */
+//        batch.update(
+//            firestore.collection("projects").document(notification.projectId),
+//            mapOf(
+//                "members" to FieldValue.arrayUnion(notification.userId),
+//                "status"  to "IN_PROGRESS"
+//            )
+//        )
+//
+//        /* 3. add user to group chat participants so they see the team chat */
+//        batch.update(
+//            firestore.collection("group_chats").document(notification.projectId),
+//            "participants", FieldValue.arrayUnion(notification.userId)
+//        )
+//
+//        batch.commit()
+//    }
+
     fun acceptRequest(notification: AppNotification) {
+        val currentUid = FirebaseAuth.getInstance().currentUser?.uid ?: return
         val batch = firestore.batch()
 
-        /* 1. mark request accepted */
         batch.update(
             firestore.collection("project_requests").document(notification.id),
             "status", "accepted"
         )
 
-        /* 2. add user to project members + flip status to IN_PROGRESS */
+        // if it's an invite, the CURRENT user joins; if join-request, the requester joins
+        val joiningUser = if (notification.isInvite) currentUid else notification.userId
+
         batch.update(
             firestore.collection("projects").document(notification.projectId),
             mapOf(
-                "members" to FieldValue.arrayUnion(notification.userId),
+                "members" to FieldValue.arrayUnion(joiningUser),
                 "status"  to "IN_PROGRESS"
             )
         )
 
-        /* 3. add user to group chat participants so they see the team chat */
         batch.update(
             firestore.collection("group_chats").document(notification.projectId),
-            "participants", FieldValue.arrayUnion(notification.userId)
+            "participants", FieldValue.arrayUnion(joiningUser)
         )
 
         batch.commit()
     }
-
     /* ── DENY ── */
     fun denyRequest(notification: AppNotification) {
         /* 1. mark denied */

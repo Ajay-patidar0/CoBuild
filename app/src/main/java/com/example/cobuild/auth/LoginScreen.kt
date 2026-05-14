@@ -32,7 +32,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
-
+import com.google.firebase.messaging.FirebaseMessaging
 @Composable
 fun LoginScreen(
     navController: NavController
@@ -71,24 +71,49 @@ fun LoginScreen(
                                     // Check if user already exists in Firestore
                                     val userDocRef = firestore.collection("users").document(user.uid)
                                     userDocRef.get().addOnSuccessListener { document ->
+//                                        if (document.exists()) {
+//                                            // User exists → navigate to Home
+//                                            isLoading = false
+//                                            navController.navigate("home") {
+//                                                popUpTo("login") { inclusive = true }
+//                                            }
                                         if (document.exists()) {
-                                            // User exists → navigate to Home
+                                            // Save FCM token on login
+                                            FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
+                                                userDocRef.update("fcmToken", token)
+                                            }
                                             isLoading = false
                                             navController.navigate("home") {
                                                 popUpTo("login") { inclusive = true }
                                             }
-                                        } else {
+                                        }
+                                        else {
                                             // New user → save basic info and navigate to Onboarding
-                                            val userData = mapOf(
-                                                "uid" to user.uid,
-                                                "name" to (user.displayName ?: ""),
-                                                "email" to (user.email ?: ""),
-                                                "photo" to (user.photoUrl?.toString() ?: "")
-                                            )
-                                            userDocRef.set(userData).addOnCompleteListener {
-                                                isLoading = false
-                                                navController.navigate("onboarding") {
-                                                    popUpTo("login") { inclusive = true }
+//                                            val userData = mapOf(
+//                                                "uid" to user.uid,
+//                                                "name" to (user.displayName ?: ""),
+//                                                "email" to (user.email ?: ""),
+//                                                "photo" to (user.photoUrl?.toString() ?: "")
+//                                            )
+//                                            userDocRef.set(userData).addOnCompleteListener {
+//                                                isLoading = false
+//                                                navController.navigate("onboarding") {
+//                                                    popUpTo("login") { inclusive = true }
+//                                                }
+//                                            }
+                                            FirebaseMessaging.getInstance().token.addOnSuccessListener { fcmToken ->
+                                                val userData = mapOf(
+                                                    "uid"      to user.uid,
+                                                    "name"     to (user.displayName ?: ""),
+                                                    "email"    to (user.email ?: ""),
+                                                    "photo"    to (user.photoUrl?.toString() ?: ""),
+                                                    "fcmToken" to fcmToken
+                                                )
+                                                userDocRef.set(userData).addOnCompleteListener {
+                                                    isLoading = false
+                                                    navController.navigate("onboarding") {
+                                                        popUpTo("login") { inclusive = true }
+                                                    }
                                                 }
                                             }
                                         }
