@@ -260,9 +260,6 @@ fun ProfileScreen(
     }
 }
 
-/*-----------------------------------------
-   HELPER COMPONENTS
------------------------------------------*/
 
 @Composable
 fun ProfileTextField(
@@ -272,6 +269,7 @@ fun ProfileTextField(
     singleLine: Boolean = true
 ) {
     Column(modifier = Modifier.padding(bottom = 16.dp)) {
+
         Text(
             text = label,
             fontSize = 14.sp,
@@ -279,17 +277,31 @@ fun ProfileTextField(
             color = ProfileTextSecondary,
             modifier = Modifier.padding(bottom = 6.dp)
         )
+
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
+
+            textStyle = androidx.compose.ui.text.TextStyle(
+                color = ProfileTextPrimary,
+                fontSize = 16.sp
+            ),
+
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = ProfilePrimaryColor,
                 unfocusedBorderColor = Color(0xFFE2E8F0),
+
                 focusedContainerColor = ProfileSurfaceColor,
-                unfocusedContainerColor = ProfileSurfaceColor
+                unfocusedContainerColor = ProfileSurfaceColor,
+
+                focusedTextColor = ProfileTextPrimary,
+                unfocusedTextColor = ProfileTextPrimary,
+
+                cursorColor = ProfilePrimaryColor
             ),
+
             singleLine = singleLine,
             maxLines = if (singleLine) 1 else 4
         )
