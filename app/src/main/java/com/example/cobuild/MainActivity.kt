@@ -515,7 +515,7 @@ fun MainApp(openScreen: String? = null) {
                 onEditClick   = { id ->
                     navController.navigate(Destinations.editProjectRoute(id))
                 },
-                // 👥 group chat button in top bar / hero
+                // group chat button in top bar / hero
                 onOpenGroupChat = { id ->
                     // fetch title first from firestore, or pass a placeholder
                     navController.navigate(Destinations.groupChatRoute(id, "Team Chat"))
