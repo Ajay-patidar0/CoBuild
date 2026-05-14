@@ -154,17 +154,19 @@ fun LoginScreen(
 
                 Box(
                     modifier = Modifier
-                        .size(72.dp)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(Surface)
-                        .shadow(6.dp),
+                        .size(90.dp)
+                        .shadow(8.dp, RoundedCornerShape(20.dp))
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(Surface),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "Co",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = PrimaryVariant
+                    Image(
+                        painter = painterResource(id = R.drawable.logo),
+                        contentDescription = "CoBuild Logo",
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(12.dp),
+                        contentScale = ContentScale.Fit
                     )
                 }
 
